@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.4
+
+# stage: frontend
+
+FROM node:20-bookworm AS frontend
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/frontend/package.json ./packages/frontend/
+
+RUN npm ci
+
+CMD npm -w @vapourcontainers-houston/frontend run dev
+
+# stage: server
+
+FROM node:20-bookworm AS server
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/server/package.json ./packages/server/
+
+RUN npm ci
+
+CMD npm -w @vapourcontainers-houston/server run dev

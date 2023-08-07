@@ -30,11 +30,11 @@
       </a-menu>
     </a-layout-sider>
     <a-layout>
-      <a-layout-header style="background: #fff; padding: 0" />
-      <a-layout-content style="margin: 0 16px">
+      <a-layout-header :style="{ background: '#fff', padding: 0 }" />
+      <a-layout-content :style="{ margin: '16px' }">
         <router-view />
       </a-layout-content>
-      <a-layout-footer style="text-align: center">
+      <a-layout-footer :style="{ textAlign: 'center' }">
         © 2023 XiNGRZ
       </a-layout-footer>
     </a-layout>

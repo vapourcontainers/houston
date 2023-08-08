@@ -6,6 +6,7 @@ import YAML from 'yaml';
 
 import type { IConfig } from './config'
 
+import account from './routes/account';
 import storage from './routes/storage';
 
 const PORT = process.env['PORT'] || 3000;
@@ -35,6 +36,7 @@ if (!await fs.pathExists(configPath)) {
 
 const config = YAML.parse(await fs.readFile(configPath, 'utf-8')) as IConfig;
 
+app.use('/account', account(config));
 app.use('/storage', storage(config));
 
 server.listen(PORT, () => {

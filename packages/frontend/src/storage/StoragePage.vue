@@ -8,7 +8,7 @@
               <a-statistic title="已用空间" :value="storage?.value" :precision="2" :suffix="storage?.unit" />
             </a-col>
             <a-col :span="8">
-              <a-statistic title="总对象数" :value="bucketStat?.objectCount" />
+              <a-statistic title="总对象数" :value="bucket.stat?.objectCount" />
             </a-col>
             <a-col :span="8">
               <a-statistic title="费用估计" :value="cost" :precision="2" prefix="￥" suffix="/ 天" />
@@ -21,29 +21,24 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
-import http from 'ky';
+import { computed, onMounted } from 'vue';
+import { useBucketStore } from '@/stores/bucket';
+import useSize from '@/composables/useSize';
 
-import type { BucketStat } from '@/aliyun/oss';
-import { getSize } from '@/utils/readable';
+const bucket = useBucketStore();
+onMounted(() => bucket.fetchStat());
 
-const bucketStat = ref<BucketStat>();
-
-const storage = computed(() => typeof bucketStat.value?.storage == 'undefined' ? undefined : getSize(bucketStat.value.storage));
+const storage = useSize(() => bucket.stat?.storage);
 
 const cost = computed(() => {
-  if (typeof bucketStat.value?.storage == 'undefined') {
+  if (typeof bucket.stat?.storage == 'undefined') {
     return undefined;
   }
 
-  const gb = bucketStat.value.storage / 1024 / 1024 / 1024;
+  const gb = bucket.stat.storage / 1024 / 1024 / 1024;
   const costPerMonth = 0.12 * gb;
   const costPerDay = costPerMonth / 30;
 
   return costPerDay;
-});
-
-onMounted(async () => {
-  bucketStat.value = await http.get(`${import.meta.env.VITE_SERVER_URL}/storage`).json();
 });
 </script>

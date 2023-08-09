@@ -2,15 +2,18 @@
   <a-skeleton active :loading="!progress" :title="false">
     <a-row :gutter="[16, 16]">
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="帧率" :value="progress?.fps" :precision="2" suffix="fps" />
+        <a-statistic title="帧" :value="progress?.frame" />
+      </a-col>
+      <a-col :xs="24" :sm="12" :md="8" :xl="4">
+        <a-statistic title="FPS" :value="progress?.fps" :precision="2" suffix="fps" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="大小" :value="size?.value" :precision="2" :suffix="size?.unit" />
       </a-col>
-      <a-col :xs="24" :sm="12" :md="8" :xl="6">
+      <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="时间" :value="progress?.outTime" />
       </a-col>
-      <a-col :xs="24" :sm="12" :md="8" :xl="6">
+      <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="码率" :value="progress?.bitrate" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">

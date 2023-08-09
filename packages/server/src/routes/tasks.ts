@@ -66,9 +66,12 @@ export default function tasks(config: IConfig): Router {
     const lines = (log.body.content?.split('\n') ?? []);
 
     for (const line of lines) {
-      const match = line.match(/^(\S+)=(\S+)$/);
+      const match = line.match(/^(\S+)=(\S+)/);
       if (!match || !match[2]) continue;
       switch (match?.[1]) {
+        case 'frame':
+          progress['frame'] = parseInt(match[2]);
+          break;
         case 'fps':
           progress['fps'] = parseFloat(match[2]);
           break;

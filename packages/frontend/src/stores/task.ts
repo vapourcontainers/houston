@@ -38,6 +38,7 @@ export interface ITaskInfo {
 }
 
 export interface ITaskProgress {
+  frame: number;
   fps: number;
   bitrate: number;
   totalSize: number;

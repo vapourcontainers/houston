@@ -11,9 +11,10 @@
             <task-status-tag :status="item.container.status" />
           </template>
 
-          <task-progress :task="item" />
-
-          <a-divider />
+          <template v-if="item.container.status == 'Running'">
+            <task-progress :task="item" />
+            <a-divider />
+          </template>
 
           <a-descriptions title="容器" :column="4" :style="{ marginBottom: '-16px' }">
             <a-descriptions-item label="地域">{{ item.container.regionId }}</a-descriptions-item>
@@ -22,9 +23,10 @@
             <a-descriptions-item label="内存">{{ item.container.memory }} GB</a-descriptions-item>
           </a-descriptions>
 
-          <a-divider />
-
-          <task-info :task="item" />
+          <template v-if="item.container.status == 'Running'">
+            <a-divider />
+            <task-info :task="item" />
+          </template>
         </a-card>
       </a-list-item>
     </template>

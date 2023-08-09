@@ -28,6 +28,7 @@ export default function tasks(config: IConfig): Router {
       regionId: config.regionId,
       containerGroupId: req.params.groupId,
       containerName: req.params.name,
+      limitBytes: 10000,
     }));
 
     const lines = (log.body.content?.split('\n') ?? []);

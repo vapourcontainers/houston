@@ -1,30 +1,30 @@
 <template>
-  <a-list :grid="{ gutter: 0 }" :data-source="task.containers" :class="$style.tasks">
+  <a-list :grid="{ gutter: 0 }" :data-source="taskStore.tasks" :class="$style.tasks">
     <template #renderItem="{ item }">
-      <a-list-item>
+      <a-list-item :key="item.id">
         <a-card>
           <template #title>
-            {{ item.containerGroupId }}
+            {{ item.container.containerGroupId }}
           </template>
 
           <template #extra>
-            <task-status-tag :status="item.status" />
+            <task-status-tag :status="item.container.status" />
           </template>
 
-          <task-progress :group-id="item.containerGroupId" :name="item.containerGroupName" />
+          <task-progress :task="item" />
 
           <a-divider />
 
           <a-descriptions title="容器" :column="4" :style="{ marginBottom: '-16px' }">
-            <a-descriptions-item label="地域">{{ item.regionId }}</a-descriptions-item>
-            <a-descriptions-item label="规格">{{ item.instanceType }}</a-descriptions-item>
-            <a-descriptions-item label="CPU">{{ item.cpu }}</a-descriptions-item>
-            <a-descriptions-item label="内存">{{ item.memory }} GB</a-descriptions-item>
+            <a-descriptions-item label="地域">{{ item.container.regionId }}</a-descriptions-item>
+            <a-descriptions-item label="规格">{{ item.container.instanceType }}</a-descriptions-item>
+            <a-descriptions-item label="CPU">{{ item.container.cpu }}</a-descriptions-item>
+            <a-descriptions-item label="内存">{{ item.container.memory }} GB</a-descriptions-item>
           </a-descriptions>
 
           <a-divider />
 
-          <task-info :group-id="item.containerGroupId" :name="item.containerGroupName" />
+          <task-info :task="item" />
         </a-card>
       </a-list-item>
     </template>
@@ -39,8 +39,8 @@ import TaskStatusTag from './TaskStatusTag.vue';
 import TaskInfo from './TaskInfo.vue';
 import TaskProgress from './TaskProgress.vue';
 
-const task = useTaskStore();
-onMounted(() => task.fetchContainers());
+const taskStore = useTaskStore();
+onMounted(() => taskStore.fetchTasks());
 </script>
 
 <style lang="scss" module>

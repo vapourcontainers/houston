@@ -13,18 +13,18 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
-import { useTaskStore, type ITaskInfo } from '@/stores/task';
+import { computed, onMounted } from 'vue';
+import { useTaskStore, type ITask } from '@/stores/task';
 
 const props = defineProps<{
-  groupId: string;
-  name: string;
+  task: ITask;
 }>();
 
-const task = useTaskStore();
+const taskStore = useTaskStore();
 
-const info = ref<ITaskInfo>();
-onMounted(async () => {
-  info.value = await task.fetchTaskInfo(props.groupId, props.name);
-});
+onMounted(() => taskStore.fetchTaskInfo(
+  props.task.container.containerGroupId!,
+  props.task.container.containerGroupName!));
+
+const info = computed(() => props.task.info);
 </script>

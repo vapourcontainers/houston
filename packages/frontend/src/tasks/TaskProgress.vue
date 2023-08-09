@@ -20,26 +20,39 @@
         <a-statistic title="速度" :value="progress?.speed" :precision="3" suffix="×" />
       </a-col>
     </a-row>
+
+    <a-progress status="active" :percent="Math.round(percent * 100)" :size="20" :style="{ marginTop: '16px' }" />
   </a-skeleton>
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useTaskStore, type ITaskProgress } from '@/stores/task';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { useTaskStore, type ITask } from '@/stores/task';
 import useSize from '@/composables/useSize';
 
 const props = defineProps<{
-  groupId: string;
-  name: string;
+  task: ITask;
 }>();
 
-const task = useTaskStore();
+const taskStore = useTaskStore();
 
-const progress = ref<ITaskProgress>();
-const size = useSize(() => progress.value?.totalSize);
+const info = computed(() => props.task.info);
+const progress = computed(() => props.task.progress);
+
+const size = useSize(() => props.task.progress?.totalSize);
+
+const percent = computed(() => {
+  if (!info.value || !progress.value) {
+    return 0;
+  }
+
+  return progress.value.frame! / info.value.frames!;
+});
 
 async function updateProgress() {
-  progress.value = await task.fetchTaskProgress(props.groupId, props.name);
+  taskStore.fetchTaskProgress(
+    props.task.container.containerGroupId!,
+    props.task.container.containerGroupName!);
 }
 
 let timer: ReturnType<typeof setInterval> | undefined;

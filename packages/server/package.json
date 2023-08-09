@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@alicloud/bssopenapi20171214": "^1.0.14",
+    "@alicloud/eci20180808": "^2.0.2",
     "@alicloud/openapi-client": "^0.4.6",
     "@alicloud/oss20190517": "^1.0.6",
     "express": "^4.18.2",

@@ -9,6 +9,7 @@ import type { IConfig } from './config'
 
 import account from './routes/account';
 import storage from './routes/storage';
+import tasks from './routes/tasks';
 
 const PORT = process.env['PORT'] || 3000;
 const ENV = process.env['NODE_ENV'] || 'development';
@@ -40,6 +41,7 @@ const config = YAML.parse(await fs.readFile(configPath, 'utf-8')) as IConfig;
 
 app.use('/account', account(config));
 app.use('/storage', storage(config));
+app.use('/tasks', tasks(config));
 
 server.listen(PORT, () => {
   console.log(`Server up with port: ${PORT}, env: ${ENV}`);

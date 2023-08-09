@@ -15,7 +15,7 @@ app.use(createRouter({
   routes: [
     { path: '/', name: 'overview', component: () => import('@/overview/OverviewPage.vue') },
     { path: '/storage', name: 'storage', component: () => import('@/storage/StoragePage.vue') },
-    { path: '/tasks', name: 'tasks', component: () => import('@/tasks/TasksPage.vue') },
+    { path: '/tasks', name: 'tasks', component: () => import('@/tasks/TaskList.vue') },
     { path: '/cost', name: 'cost', component: () => import('@/cost/CostPage.vue') },
   ],
 }));

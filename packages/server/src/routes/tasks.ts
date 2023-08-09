@@ -53,5 +53,45 @@ export default function tasks(config: IConfig): Router {
     });
   });
 
+  router.get('/:groupId/:name/progress', async (req, res) => {
+    const log = await client.describeContainerLog(new DescribeContainerLogRequest({
+      regionId: config.regionId,
+      containerGroupId: req.params.groupId,
+      containerName: req.params.name,
+      tail: 20,
+    }));
+
+    const progress: Record<string, string | number | undefined> = {};
+
+    const lines = (log.body.content?.split('\n') ?? []);
+
+    for (const line of lines) {
+      const match = line.match(/^(\S+)=(\S+)$/);
+      if (!match || !match[2]) continue;
+      switch (match?.[1]) {
+        case 'fps':
+          progress['fps'] = parseFloat(match[2]);
+          break;
+        case 'bitrate':
+          progress['bitrate'] = match[2];
+          break;
+        case 'total_size':
+          progress['totalSize'] = parseInt(match[2]);
+          break;
+        case 'out_time_ms':
+          progress['outTimeMs'] = parseInt(match[2]);
+          break;
+        case 'out_time':
+          progress['outTime'] = match[2].slice(0, -3);
+          break;
+        case 'speed':
+          progress['speed'] = parseFloat(match[2]);
+          break;
+      }
+    }
+
+    res.json(progress);
+  });
+
   return router;
 }

@@ -1,5 +1,6 @@
 import { createServer } from 'http';
 import express from 'express';
+import morgan from 'morgan';
 import { Server } from 'socket.io';
 import fs from 'fs-extra';
 import YAML from 'yaml';
@@ -19,6 +20,7 @@ const io = new Server(server);
 if (ENV == 'production') {
   app.use(express.static(new URL('../../frontend/dist', import.meta.url).pathname));
 } else {
+  app.use(morgan('dev'))
   app.use((_req, res, next) => {
     res.set('Access-Control-Allow-Origin', 'http://localhost:8080');
     next();

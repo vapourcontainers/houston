@@ -1,5 +1,5 @@
 <template>
-  <a-list :grid="{ gutter: 16 }" :data-source="task.containers">
+  <a-list :grid="{ gutter: 0 }" :data-source="task.containers" :class="$style.tasks">
     <template #renderItem="{ item }">
       <a-list-item>
         <a-card>
@@ -42,3 +42,12 @@ import TaskProgress from './TaskProgress.vue';
 const task = useTaskStore();
 onMounted(() => task.fetchContainers());
 </script>
+
+<style lang="scss" module>
+.tasks {
+  :global(.ant-list-item) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+</style>

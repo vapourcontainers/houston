@@ -42,15 +42,11 @@ onMounted(() => bucket.fetchObjects());
 const storage = useSize(() => bucket.stat?.storage);
 
 const cost = computed(() => {
-  if (typeof bucket.stat?.storage == 'undefined') {
+  if (typeof bucket.cost?.costAfterDiscount == 'undefined') {
     return undefined;
   }
 
-  const gb = bucket.stat.storage / 1024 / 1024 / 1024;
-  const costPerMonth = 0.12 * gb;
-  const costPerDay = costPerMonth / 30;
-
-  return costPerDay;
+  return bucket.cost.costAfterDiscount * 24;
 });
 
 const columns: TableColumnType<ObjectSummary>[] = [

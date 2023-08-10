@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import asyncHandler from 'express-async-handler';
 import { Config } from '@alicloud/openapi-client';
 import OSS, { ListObjectsV2Request } from '@alicloud/oss20190517';
 
@@ -17,15 +18,15 @@ export default function storage(config: IConfig): Router {
     endpoint: `oss-${config.regionId}.aliyuncs.com`,
   }));
 
-  router.get('/', async (_req, res) => {
+  router.get('/', asyncHandler(async (_req, res) => {
     const stat = await getBucketStat(client, config.oss.bucket);
     res.json(stat.body);
-  });
+  }));
 
-  router.get('/files', async (_req, res) => {
+  router.get('/files', asyncHandler(async (_req, res) => {
     const objects = await client.listObjectsV2(config.oss.bucket, new ListObjectsV2Request());
     res.json(objects.body.contents);
-  });
+  }));
 
   return router;
 }

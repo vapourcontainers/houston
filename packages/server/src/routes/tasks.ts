@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import asyncHandler from 'express-async-handler';
 import { Config } from '@alicloud/openapi-client';
 import ECI, { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
 
@@ -15,19 +16,19 @@ export default function tasks(config: IConfig): Router {
     endpoint: `eci.${config.regionId}.aliyuncs.com`,
   }));
 
-  router.get('/', async (_req, res) => {
+  router.get('/', asyncHandler(async (_req, res) => {
     const containers = await client.describeContainerGroups(new DescribeContainerGroupsRequest({
       regionId: config.regionId,
     }));
 
     res.json(containers.body.containerGroups);
-  });
+  }));
 
-  router.get('/:groupId/:name/info', async (req, res) => {
+  router.get('/:groupId/:name/info', asyncHandler(async (req, res) => {
     const log = await client.describeContainerLog(new DescribeContainerLogRequest({
       regionId: config.regionId,
-      containerGroupId: req.params.groupId,
-      containerName: req.params.name,
+      containerGroupId: req.params['groupId'],
+      containerName: req.params['name'],
       limitBytes: 10000,
     }));
 
@@ -52,13 +53,13 @@ export default function tasks(config: IConfig): Router {
       colorFamily,
       bits,
     });
-  });
+  }));
 
-  router.get('/:groupId/:name/progress', async (req, res) => {
+  router.get('/:groupId/:name/progress', asyncHandler(async (req, res) => {
     const log = await client.describeContainerLog(new DescribeContainerLogRequest({
       regionId: config.regionId,
-      containerGroupId: req.params.groupId,
-      containerName: req.params.name,
+      containerGroupId: req.params['groupId'],
+      containerName: req.params['name'],
       tail: 20,
     }));
 
@@ -95,7 +96,7 @@ export default function tasks(config: IConfig): Router {
     }
 
     res.json(progress);
-  });
+  }));
 
   return router;
 }

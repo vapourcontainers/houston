@@ -1,23 +1,15 @@
 import { Router } from 'express';
 import asyncHandler from 'express-async-handler';
-import { Config } from '@alicloud/openapi-client';
-import ECI, { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
+import { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
 
-import aliyun from '../aliyun/aliyun';
-
+import type { IAliyun } from '../aliyun/aliyun';
 import type { IConfig } from '../config'
 
-export default function tasks(config: IConfig): Router {
+export default function tasks(config: IConfig, { eci }: IAliyun): Router {
   const router = Router();
 
-  const client = new (aliyun(ECI))(new Config({
-    accessKeyId: config.accessKeyId,
-    accessKeySecret: config.accessSecret,
-    endpoint: `eci.${config.regionId}.aliyuncs.com`,
-  }));
-
   router.get('/', asyncHandler(async (_req, res) => {
-    const containers = await client.describeContainerGroups(new DescribeContainerGroupsRequest({
+    const containers = await eci.describeContainerGroups(new DescribeContainerGroupsRequest({
       regionId: config.regionId,
     }));
 
@@ -25,7 +17,7 @@ export default function tasks(config: IConfig): Router {
   }));
 
   router.get('/:groupId/:name/info', asyncHandler(async (req, res) => {
-    const log = await client.describeContainerLog(new DescribeContainerLogRequest({
+    const log = await eci.describeContainerLog(new DescribeContainerLogRequest({
       regionId: config.regionId,
       containerGroupId: req.params['groupId'],
       containerName: req.params['name'],
@@ -56,7 +48,7 @@ export default function tasks(config: IConfig): Router {
   }));
 
   router.get('/:groupId/:name/progress', asyncHandler(async (req, res) => {
-    const log = await client.describeContainerLog(new DescribeContainerLogRequest({
+    const log = await eci.describeContainerLog(new DescribeContainerLogRequest({
       regionId: config.regionId,
       containerGroupId: req.params['groupId'],
       containerName: req.params['name'],

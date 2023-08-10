@@ -1,23 +1,14 @@
 import { Router } from 'express';
 import asyncHandler from 'express-async-handler';
-import { Config } from '@alicloud/openapi-client';
-import BSS from '@alicloud/bssopenapi20171214';
-
-import aliyun from '../aliyun/aliyun';
 
 import type { IConfig } from '../config'
+import type { IAliyun } from '../aliyun/aliyun';
 
-export default function account(config: IConfig): Router {
+export default function account(_config: IConfig, { bss }: IAliyun): Router {
   const router = Router();
 
-  const client = new (aliyun(BSS))(new Config({
-    accessKeyId: config.accessKeyId,
-    accessKeySecret: config.accessSecret,
-    regionId: config.regionId,
-  }));
-
   router.get('/balance', asyncHandler(async (_req, res) => {
-    const objects = await client.queryAccountBalance();
+    const objects = await bss.queryAccountBalance();
     res.json(objects.body.data);
   }));
 

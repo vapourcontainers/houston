@@ -6,6 +6,7 @@ import fs from 'fs-extra';
 import YAML from 'yaml';
 
 import type { IConfig } from './config'
+import { createInstance } from './aliyun/aliyun';
 
 import account from './routes/account';
 import storage from './routes/storage';
@@ -38,10 +39,11 @@ if (!await fs.pathExists(configPath)) {
 }
 
 const config = YAML.parse(await fs.readFile(configPath, 'utf-8')) as IConfig;
+const aliyun = createInstance(config);
 
-app.use('/account', account(config));
-app.use('/storage', storage(config));
-app.use('/tasks', tasks(config));
+app.use('/account', account(config, aliyun));
+app.use('/storage', storage(config, aliyun));
+app.use('/tasks', tasks(config, aliyun));
 
 server.listen(PORT, () => {
   console.log(`Server up with port: ${PORT}, env: ${ENV}`);

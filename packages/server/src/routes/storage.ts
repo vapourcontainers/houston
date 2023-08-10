@@ -5,14 +5,13 @@ import OSS, { ListObjectsV2Request } from '@alicloud/oss20190517';
 
 import type { IConfig } from '../config'
 
+import aliyun from '../aliyun/aliyun';
 import { getBucketStat } from '../aliyun/oss';
 
 export default function storage(config: IConfig): Router {
   const router = Router();
 
-  const Client = (OSS as any)!.default! as typeof OSS;
-
-  const client = new Client(new Config({
+  const client = new (aliyun(OSS))(new Config({
     accessKeyId: config.accessKeyId,
     accessKeySecret: config.accessSecret,
     endpoint: `oss-${config.regionId}.aliyuncs.com`,

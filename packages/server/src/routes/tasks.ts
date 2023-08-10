@@ -3,14 +3,14 @@ import asyncHandler from 'express-async-handler';
 import { Config } from '@alicloud/openapi-client';
 import ECI, { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
 
+import aliyun from '../aliyun/aliyun';
+
 import type { IConfig } from '../config'
 
 export default function tasks(config: IConfig): Router {
   const router = Router();
 
-  const Client = (ECI as any)!.default! as typeof ECI;
-
-  const client = new Client(new Config({
+  const client = new (aliyun(ECI))(new Config({
     accessKeyId: config.accessKeyId,
     accessKeySecret: config.accessSecret,
     endpoint: `eci.${config.regionId}.aliyuncs.com`,

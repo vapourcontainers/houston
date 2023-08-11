@@ -62,12 +62,15 @@ export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
     const lines = (log.body.content?.split('\n') ?? []);
 
     for (const line of lines) {
+      const frame = line.match(/^frame=\s*(\d+)/);
+      if (frame?.[1]) {
+        progress['frame'] = parseInt(frame[1]);
+        continue;
+      }
+
       const match = line.match(/^(\S+)=(\S+)/);
-      if (!match || !match[2]) continue;
-      switch (match?.[1]) {
-        case 'frame':
-          progress['frame'] = parseInt(match[2]);
-          break;
+      if (!match?.[2]) continue;
+      switch (match[1]) {
         case 'fps':
           progress['fps'] = parseFloat(match[2]);
           break;

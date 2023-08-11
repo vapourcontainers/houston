@@ -18,12 +18,7 @@
             <a-divider />
           </template>
 
-          <a-descriptions title="容器" :column="4" :style="{ marginBottom: '-16px' }">
-            <a-descriptions-item label="地域">{{ item.container.regionId }}</a-descriptions-item>
-            <a-descriptions-item label="规格">{{ item.container.instanceType }}</a-descriptions-item>
-            <a-descriptions-item label="CPU">{{ item.container.cpu }}</a-descriptions-item>
-            <a-descriptions-item label="内存">{{ item.container.memory }} GB</a-descriptions-item>
-          </a-descriptions>
+          <task-container :task="item" />
 
           <template v-if="item.container.status == 'Running'">
             <a-divider />
@@ -42,6 +37,7 @@ import { useTaskStore, type ITaskContainer } from '@/stores/task';
 import TaskStatusTag from './TaskStatusTag.vue';
 import TaskInfo from './TaskInfo.vue';
 import TaskProgress from './TaskProgress.vue';
+import TaskContainer from './TaskContainer.vue';
 
 const taskStore = useTaskStore();
 onMounted(() => taskStore.fetchTasks());

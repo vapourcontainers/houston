@@ -4,7 +4,9 @@
       <a-list-item :key="item.id">
         <a-card>
           <template #title>
-            {{ item.container.containerGroupId }}
+            <a :href="linkToECI(item.container)" target="_blank" noreferrer>
+              {{ item.container.containerGroupId }}
+            </a>
           </template>
 
           <template #extra>
@@ -35,7 +37,7 @@
 
 <script lang="ts" setup>
 import { onMounted } from 'vue';
-import { useTaskStore } from '@/stores/task';
+import { useTaskStore, type ITaskContainer } from '@/stores/task';
 
 import TaskStatusTag from './TaskStatusTag.vue';
 import TaskInfo from './TaskInfo.vue';
@@ -43,6 +45,10 @@ import TaskProgress from './TaskProgress.vue';
 
 const taskStore = useTaskStore();
 onMounted(() => taskStore.fetchTasks());
+
+function linkToECI(container: ITaskContainer) {
+  return `https://eci.console.aliyun.com/#/eci/${container.regionId}/detail/${container.containerGroupId}/containers`;
+}
 </script>
 
 <style lang="scss" module>

@@ -11,7 +11,7 @@
               <a-statistic title="总对象数" :value="bucket.stat?.objectCount" />
             </a-col>
             <a-col :span="8">
-              <a-statistic title="费用估计" :value="cost" :precision="2" prefix="￥" suffix="/ 天" />
+              <a-statistic title="费用估计" :value="cost" :precision="3" prefix="￥" suffix="/ 天" />
             </a-col>
           </a-row>
         </a-skeleton>

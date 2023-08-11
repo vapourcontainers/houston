@@ -3,10 +3,12 @@ import { defineStore } from 'pinia';
 import http from 'ky';
 
 import type { DescribeContainerGroupsResponseBodyContainerGroups } from '@alicloud/eci20180808';
+import type { GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail } from '@alicloud/bssopenapi20171214';
 
 export const useTaskStore = defineStore('task', () => {
   const taskIds = ref<string[]>();
   const taskData = ref<Record<string, ITask>>();
+  const priceOfTypes = ref<Record<string, GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail>>({});
 
   const tasks = computed(() => {
     return taskIds.value?.map((id) => taskData.value![id]);
@@ -32,6 +34,20 @@ export const useTaskStore = defineStore('task', () => {
       };
       return acc;
     }, {});
+
+    for (const container of containers) {
+      const type = container.instanceType!;
+      if (typeof priceOfTypes.value[type] == 'undefined') {
+        const cost: GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail =
+          await http.get(`${import.meta.env.VITE_SERVER_URL}/tasks/cost`, {
+            searchParams: {
+              type: type,
+            },
+          }).json();
+
+        priceOfTypes.value = { ...priceOfTypes.value, [type]: cost };
+      }
+    }
   }
 
   async function fetchTaskInfo(id: string, name: string) {
@@ -46,6 +62,7 @@ export const useTaskStore = defineStore('task', () => {
 
   return {
     tasks,
+    priceOfTypes,
     fetchTasks,
     fetchTaskInfo,
     fetchTaskProgress,

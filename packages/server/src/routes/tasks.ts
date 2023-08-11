@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import asyncHandler from 'express-async-handler';
+import { stringify } from 'querystring';
+import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
 import { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
 
 import type { IAliyun } from '../aliyun/aliyun';
 import type { IConfig } from '../config'
 
-export default function tasks(config: IConfig, { eci }: IAliyun): Router {
+export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
   const router = Router();
 
   router.get('/', asyncHandler(async (_req, res) => {
@@ -88,6 +90,26 @@ export default function tasks(config: IConfig, { eci }: IAliyun): Router {
     }
 
     res.json(progress);
+  }));
+
+  router.get('/cost', asyncHandler(async (req, res) => {
+    const objects = await bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
+      productCode: 'ecs',
+      subscriptionType: 'PayAsYouGo',
+      region: config.regionId,
+      moduleList: [
+        {
+          moduleCode: 'InstanceType',
+          priceType: 'Hour',
+          config: stringify(<Record<string, string>>{
+            'InstanceType': req.query['type'],
+            'Region': config.regionId,
+          }, ',', ':'),
+        },
+      ],
+    }));
+
+    res.json(objects.body.data?.moduleDetails?.moduleDetail?.[0]);
   }));
 
   return router;

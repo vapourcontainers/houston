@@ -1,6 +1,6 @@
 <template>
   <a-skeleton active :loading="!info" :title="false">
-    <a-descriptions title="任务" :column="4" :style="{ marginBottom: '-16px' }">
+    <a-descriptions title="任务" :column="{ xs: 1, sm: 1, md: 2, lg: 4 }" :style="{ marginBottom: '-16px' }">
       <a-descriptions-item label="宽">{{ info?.width }}</a-descriptions-item>
       <a-descriptions-item label="高">{{ info?.height }}</a-descriptions-item>
       <a-descriptions-item label="帧数">{{ info?.frames }}</a-descriptions-item>

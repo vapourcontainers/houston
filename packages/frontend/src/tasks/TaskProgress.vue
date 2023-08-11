@@ -26,9 +26,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useTaskStore, type ITask } from '@/stores/task';
 import useSize from '@/composables/useSize';
+import useInterval from '@/composables/useInterval';
 
 const props = defineProps<{
   task: ITask;
@@ -55,16 +56,5 @@ async function updateProgress() {
     props.task.container.containerGroupName!);
 }
 
-let timer: ReturnType<typeof setInterval> | undefined;
-
-onMounted(() => {
-  updateProgress();
-  timer = setInterval(updateProgress, 1000);
-});
-
-onBeforeUnmount(() => {
-  if (timer) {
-    clearInterval(timer);
-  }
-});
+useInterval(updateProgress, 1000);
 </script>

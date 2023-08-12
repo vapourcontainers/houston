@@ -1,9 +1,18 @@
 {
-  "extends": "@tsconfig/node18-strictest-esm/tsconfig.json",
+  "extends": [
+    "@tsconfig/strictest/tsconfig",
+    "@tsconfig/node20/tsconfig",
+  ],
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "rootDir": "src",
-    "outDir": "lib",
+    "outDir": "dist",
     "baseUrl": ".",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "removeComments": true,
   },
 }

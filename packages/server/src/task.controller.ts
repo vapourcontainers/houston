@@ -1,28 +1,32 @@
-import { Router } from 'express';
-import asyncHandler from 'express-async-handler';
 import { stringify } from 'querystring';
-import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
+
+import { Controller, Get, Param, Query } from '@nestjs/common';
+
 import { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
+import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
 
-import type { IAliyun } from '../aliyun/aliyun';
-import type { IConfig } from '../config'
+import { AliyunService } from './aliyun.service';
 
-export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
-  const router = Router();
+@Controller('tasks')
+export class TaskController {
+  constructor(private readonly aliyun: AliyunService) {
+  }
 
-  router.get('/', asyncHandler(async (_req, res) => {
-    const containers = await eci.describeContainerGroups(new DescribeContainerGroupsRequest({
-      regionId: config.regionId,
+  @Get()
+  async getContainers() {
+    const containers = await this.aliyun.eci.describeContainerGroups(new DescribeContainerGroupsRequest({
+      regionId: this.aliyun.config.regionId,
     }));
 
-    res.json(containers.body.containerGroups);
-  }));
+    return containers.body.containerGroups;
+  }
 
-  router.get('/:groupId/:name/info', asyncHandler(async (req, res) => {
-    const log = await eci.describeContainerLog(new DescribeContainerLogRequest({
-      regionId: config.regionId,
-      containerGroupId: req.params['groupId'],
-      containerName: req.params['name'],
+  @Get(':groupId/:name/info')
+  async getTaskInfo(@Param('groupId') groupId: string, @Param('name') name: string) {
+    const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
+      regionId: this.aliyun.config.regionId,
+      containerGroupId: groupId,
+      containerName: name,
       limitBytes: 10000,
     }));
 
@@ -38,7 +42,7 @@ export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
     const colorFamily = info.match(/^Color Family: (\S+)/m)?.[1];
     const bits = parseInt(info.match(/^Bits: (\d+)/m)?.[1] || '');
 
-    res.json({
+    return {
       width,
       height,
       frames,
@@ -46,14 +50,15 @@ export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
       formatName,
       colorFamily,
       bits,
-    });
-  }));
+    };
+  }
 
-  router.get('/:groupId/:name/progress', asyncHandler(async (req, res) => {
-    const log = await eci.describeContainerLog(new DescribeContainerLogRequest({
-      regionId: config.regionId,
-      containerGroupId: req.params['groupId'],
-      containerName: req.params['name'],
+  @Get(':groupId/:name/progress')
+  async getTaskProgress(@Param('groupId') groupId: string, @Param('name') name: string) {
+    const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
+      regionId: this.aliyun.config.regionId,
+      containerGroupId: groupId,
+      containerName: name,
       tail: 20,
     }));
 
@@ -92,28 +97,27 @@ export default function tasks(config: IConfig, { bss, eci }: IAliyun): Router {
       }
     }
 
-    res.json(progress);
-  }));
+    return progress;
+  }
 
-  router.get('/cost', asyncHandler(async (req, res) => {
-    const objects = await bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
+  @Get('cost')
+  async getCost(@Query('type') type: string) {
+    const objects = await this.aliyun.bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
       productCode: 'ecs',
       subscriptionType: 'PayAsYouGo',
-      region: config.regionId,
+      region: this.aliyun.config.regionId,
       moduleList: [
         {
           moduleCode: 'InstanceType',
           priceType: 'Hour',
           config: stringify(<Record<string, string>>{
-            'InstanceType': req.query['type'],
-            'Region': config.regionId,
+            'InstanceType': type,
+            'Region': this.aliyun.config.regionId,
           }, ',', ':'),
         },
       ],
     }));
 
-    res.json(objects.body.data?.moduleDetails?.moduleDetail?.[0]);
-  }));
-
-  return router;
+    return objects.body.data?.moduleDetails?.moduleDetail?.[0];
+  }
 }

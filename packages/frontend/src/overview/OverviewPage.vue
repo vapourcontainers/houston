@@ -19,7 +19,8 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useBucketStore } from '@/stores/bucket';
 import { useTaskStore } from '@/stores/task';
@@ -27,14 +28,16 @@ import { useAccountStore } from '@/stores/account';
 
 import useSize from '@/composables/useSize';
 
+const route = useRoute();
+
 const bucketStore = useBucketStore();
-onMounted(() => bucketStore.fetchStat());
+watch(route.params, () => bucketStore.fetchStat(), { immediate: true });
 
 const taskStore = useTaskStore();
-onMounted(() => taskStore.fetchTasks());
+watch(route.params, () => taskStore.fetchTasks(), { immediate: true });
 
 const accountStore = useAccountStore();
-onMounted(() => accountStore.fetchBalance());
+watch(route.params, () => accountStore.fetchBalance(), { immediate: true });
 
 const storage = useSize(() => bucketStore.stat?.storage);
 </script>

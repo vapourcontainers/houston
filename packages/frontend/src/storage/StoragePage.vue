@@ -26,7 +26,8 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
+import { computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import type { TableColumnType } from 'ant-design-vue';
 import type { ObjectSummary } from '@alicloud/oss20190517';
 import dayjs from 'dayjs';
@@ -35,9 +36,11 @@ import { useBucketStore } from '@/stores/bucket';
 import useSize from '@/composables/useSize';
 import { getSize } from '@/utils/readable';
 
+const route = useRoute();
+
 const bucket = useBucketStore();
-onMounted(() => bucket.fetchStat());
-onMounted(() => bucket.fetchObjects());
+watch(route.params, () => bucket.fetchStat(), { immediate: true });
+watch(route.params, () => bucket.fetchObjects(), { immediate: true });
 
 const storage = useSize(() => bucket.stat?.storage);
 

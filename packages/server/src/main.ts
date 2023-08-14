@@ -6,9 +6,7 @@ const ENV = process.env['NODE_ENV'] || 'development';
 
 const app = await NestFactory.create(AppModule);
 
-if (ENV == 'production') {
-  // app.use(express.static(new URL('../../frontend/dist', import.meta.url).pathname));
-} else {
+if (ENV == 'development') {
   app.enableCors();
 }
 

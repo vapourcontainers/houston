@@ -2,6 +2,10 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createRouter, createWebHistory } from 'vue-router';
 
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
+
 import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/reset.css';
 

@@ -2,7 +2,7 @@ import { stringify } from 'querystring';
 
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { DescribeContainerGroupsRequest, DescribeContainerLogRequest } from '@alicloud/eci20180808';
+import { DescribeContainerGroupsRequest, DescribeContainerLogRequest, ExecContainerCommandRequest } from '@alicloud/eci20180808';
 import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
 
 import { AliyunService } from './aliyun.service';
@@ -23,16 +23,15 @@ export class TaskController {
 
   @Get(':groupId/:name/info')
   async getTaskInfo(@Param('groupId') groupId: string, @Param('name') name: string) {
-    const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
+    const output = await this.aliyun.eci.execContainerCommand(new ExecContainerCommandRequest({
       regionId: this.aliyun.config.regionId,
       containerGroupId: groupId,
       containerName: name,
-      limitBytes: 10000,
+      command: '/home/info.sh',
+      sync: true,
     }));
 
-    const lines = (log.body.content?.split('\n') ?? []);
-    const offset = lines.findIndex((line) => line.includes('vspipe --info'));
-    const info = lines.slice(offset + 1, offset + 12).join('\n');
+    const info = output.body.syncResponse || '';
 
     const width = parseInt(info.match(/^Width: (\d+)/m)?.[1] || '');
     const height = parseInt(info.match(/^Height: (\d+)/m)?.[1] || '');

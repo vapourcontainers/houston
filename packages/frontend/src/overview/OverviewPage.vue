@@ -7,7 +7,7 @@
             <a-statistic title="存储" :value="storage?.value" :precision="2" :suffix="storage?.unit" />
           </a-col>
           <a-col :span="8">
-            <a-statistic title="任务" :value="taskStore?.tasks?.length" />
+            <a-statistic title="任务" :value="tasks" />
           </a-col>
           <a-col :span="8">
             <a-statistic title="余额" :value="accountStore?.balance?.availableAmount" :precision="2" prefix="￥" />
@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useBucketStore } from '@/stores/bucket';
@@ -40,4 +40,6 @@ const accountStore = useAccountStore();
 watch(route.params, () => accountStore.fetchBalance(), { immediate: true });
 
 const storage = useSize(() => bucketStore.stat?.storage);
+
+const tasks = computed(() => taskStore.tasks?.filter(task => task.container.status == 'Running').length);
 </script>

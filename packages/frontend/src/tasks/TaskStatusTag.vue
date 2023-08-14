@@ -18,7 +18,7 @@ const status = computed(() => {
     case 'Succeeded':
       return { color: undefined, text: '完成' };
     case 'Failed':
-      return { color: 'red', text: '运行失败' };
+      return { color: 'red', text: '失败' };
     case 'Scheduling':
       return { color: 'blue', text: '创建中' };
     case 'ScheduleFailed':

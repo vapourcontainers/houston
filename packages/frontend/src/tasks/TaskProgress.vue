@@ -33,7 +33,8 @@
       </a-col>
     </a-row>
 
-    <a-progress status="active" :percent="Math.round(percent * 100)" :size="20" :style="{ marginTop: '16px' }" />
+    <a-progress status="active" :percent="Math.round(percent * 100)" :size="20" :show-info="false"
+      :style="{ marginTop: '16px' }" />
   </a-skeleton>
 </template>
 

@@ -10,6 +10,8 @@ if (ENV == 'development') {
   app.enableCors();
 }
 
+app.setGlobalPrefix('api');
+
 await app.listen(PORT);
 
 console.log(`Server up with port: ${PORT}, env: ${ENV}`);

@@ -31,8 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
 
 import { useTaskStore } from '@/stores/task';
 
@@ -46,10 +45,8 @@ import TaskFormat from './TaskFormat.vue';
 import TaskProgress from './TaskProgress.vue';
 import TaskRunner from './TaskRunner.vue';
 
-const route = useRoute();
-
 const taskStore = useTaskStore();
-watch(route.params, () => taskStore.fetchTasks(), { immediate: true });
+onMounted(() => taskStore.fetchTasks());
 
 function linkToECI(runner: ITaskAliyunRunner) {
   return `https://eci.console.aliyun.com/#/eci/${runner.properties.regionId}/detail/${runner.properties.containerGroupId}/containers`;

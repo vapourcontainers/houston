@@ -2,7 +2,7 @@
   <a-layout style="min-height: 100vh">
     <a-layout-sider v-model:collapsed="collapsed" collapsible>
       <div :class="$style.logo" />
-      <a-menu v-model:selected-keys="page" theme="dark" mode="inline">
+      <a-menu :selected-keys="page" theme="dark" mode="inline">
         <a-menu-item key="overview">
           <router-link :to="{ name: 'overview' }">
             <dashboard-outlined />

@@ -26,8 +26,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
 import type { TableColumnType } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -39,11 +38,9 @@ import type { IStorageItem } from '@vapourcontainers-houston/typing';
 import useSize from '@/composables/useSize';
 import { getSize } from '@/utils/readable';
 
-const route = useRoute();
-
 const storageStore = useStorageStore();
-watch(route.params, () => storageStore.fetchInfo(), { immediate: true });
-watch(route.params, () => storageStore.fetchItems(), { immediate: true });
+onMounted(() => storageStore.fetchInfo());
+onMounted(() => storageStore.fetchItems());
 
 const priceStore = usePriceStore();
 

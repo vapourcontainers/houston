@@ -12,10 +12,10 @@
         <a-statistic title="大小" :value="size?.value" :precision="2" :suffix="size?.unit" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="时间码" :value="timestamp" />
+        <a-statistic title="时间码" :value="formatDuration(timecode, 3)" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="码率" :value="progress!.currentBitrate / 1024" :precision="4" suffix="Kb/s" />
+        <a-statistic title="码率" :value="progress!.currentBitrate / 1024" :precision="0" suffix="Kbps" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="速度" :value="progress!.speed" :precision="4" suffix="×" />
@@ -69,12 +69,12 @@ const runner = computed(() => props.task.runner);
 const size = useSize(() => props.task.progress?.outputBytes);
 const stats = useRunnerStats(runner);
 
-const timestamp = computed(() => {
+const timecode = computed(() => {
   if (!progress.value) {
     return undefined;
   }
 
-  return dayjs.duration(progress.value.processedDurationMs).format('HH:mm:ss.SSS');
+  return dayjs.duration(progress.value.processedDurationMs);
 });
 
 const percent = computed(() => {
@@ -122,14 +122,14 @@ const estimatedBalance = computed(() => {
   return (price.value || 0) * (duration || 0);
 });
 
-function formatDuration(duration: plugin.Duration | undefined) {
+function formatDuration(duration: plugin.Duration | undefined, precision = 0) {
   if (!duration) return undefined;
 
-  const hours = Math.floor(duration.as('hours'));
-  const minutes = Math.floor(duration.as('minutes')) % 60;
-  const seconds = Math.floor(duration.as('seconds')) % 60;
+  const hours = (Math.floor(duration.as('hours'))).toString().padStart(2, '0');
+  const minutes = (Math.floor(duration.as('minutes')) % 60).toString().padStart(2, '0');
+  const seconds = (duration.as('seconds') % 60).toFixed(precision).padStart(precision ? precision + 3 : 2, '0');
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  return `${hours}:${minutes}:${seconds}`;
 }
 
 useInterval(() => taskStore.fetchTaskProgress(props.task.id), 1000);

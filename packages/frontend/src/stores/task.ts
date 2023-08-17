@@ -1,99 +1,83 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import http from 'ky';
+import ky from 'ky';
 
-import type { DescribeContainerGroupsResponseBodyContainerGroups } from '@alicloud/eci20180808';
-import type { GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail } from '@alicloud/bssopenapi20171214';
+import {
+  type ITaskItem,
+  type ITaskAliyunRunner,
+  type ITaskFormat,
+  type ITaskProgress,
+  ITaskRunnerStatus,
+} from '@vapourcontainers-houston/typing';
+
+import { usePriceStore } from './price';
 
 export const useTaskStore = defineStore('task', () => {
   const taskIds = ref<string[]>();
-  const taskData = ref<Record<string, ITask>>();
-  const priceOfTypes = ref<Record<string, GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail>>({});
+  const taskItems = ref<Record<string, ITaskItem<ITaskAliyunRunner>>>();
 
-  const tasks = computed(() => {
-    return taskIds.value?.map((id) => taskData.value![id]);
+  const tasks = computed(() => taskIds.value?.map((id) => taskItems.value![id]));
+  const runningTasks = computed(() => tasks.value?.filter((task) => task.runner.status == ITaskRunnerStatus.RUNNING));
+
+  const priceStore = usePriceStore();
+
+  const http = ky.extend({
+    prefixUrl: import.meta.env.VITE_SERVER_URL,
   });
 
   async function fetchTasks() {
-    const containers: DescribeContainerGroupsResponseBodyContainerGroups[] =
-      await http.get(`${import.meta.env.VITE_SERVER_URL}/tasks`).json();
+    const runners = await http.get('tasks').json<ITaskAliyunRunner[]>();
 
-    if (!containers) {
+    if (!runners) {
       taskIds.value = undefined;
-      taskData.value = undefined;
+      taskItems.value = undefined;
       return;
     }
 
-    taskIds.value = containers.map((container: ITaskContainer) => container.containerGroupId!);
-    taskData.value = containers.reduce((acc: Record<string, ITask>, container: ITaskContainer) => {
-      acc[container.containerGroupId!] = {
-        id: container.containerGroupId!,
-        container,
-        info: null!,
-        progress: null!,
+    taskIds.value = runners.map((runner) => makeTaskId(runner));
+    taskItems.value = runners.reduce((items, runner) => {
+      items[makeTaskId(runner)] = {
+        ...items[makeTaskId(runner)],
+        id: makeTaskId(runner),
+        name: runner.properties.containerGroupId,
+        runner: runner,
       };
-      return acc;
-    }, {});
+      return items;
+    }, taskItems.value || {});
 
-    for (const container of containers) {
-      const type = container.instanceType!;
-      if (typeof priceOfTypes.value[type] == 'undefined') {
-        const cost: GetPayAsYouGoPriceResponseBodyDataModuleDetailsModuleDetail =
-          await http.get(`${import.meta.env.VITE_SERVER_URL}/tasks/cost`, {
-            searchParams: {
-              type: type,
-            },
-          }).json();
-
-        priceOfTypes.value = { ...priceOfTypes.value, [type]: cost };
+    for (const runner of runners) {
+      const type = runner.properties.instanceType;
+      if (typeof priceStore.runners[type] == 'undefined') {
+        priceStore.fetchRunner(type);
       }
     }
   }
 
-  async function fetchTaskInfo(id: string, name: string) {
-    const info: ITaskInfo = await http.get(`${import.meta.env.VITE_SERVER_URL}/tasks/${id}/${name}/info`).json();
-    taskData.value = { ...taskData.value, [id]: { ...taskData.value![id], info } };
+  async function fetchTaskFormat(id: string) {
+    const format = await http.get(`tasks/${encodeURIComponent(id)}/format`).json<ITaskFormat>();
+    taskItems.value = {
+      ...taskItems.value,
+      [id]: { ...taskItems.value![id], format },
+    };
   }
 
-  async function fetchTaskProgress(id: string, name: string) {
-    const progress: ITaskProgress = await http.get(`${import.meta.env.VITE_SERVER_URL}/tasks/${id}/${name}/progress`).json();
-    taskData.value = { ...taskData.value, [id]: { ...taskData.value![id], progress } };
+  async function fetchTaskProgress(id: string) {
+    const progress = await http.get(`tasks/${encodeURIComponent(id)}/progress`).json<ITaskProgress>();
+    taskItems.value = {
+      ...taskItems.value,
+      [id]: { ...taskItems.value![id], progress },
+    };
   }
 
   return {
     tasks,
-    priceOfTypes,
+    runningTasks,
     fetchTasks,
-    fetchTaskInfo,
+    fetchTaskFormat,
     fetchTaskProgress,
   };
 });
 
-export interface ITask {
-  id: string;
-  container: ITaskContainer;
-  info?: ITaskInfo;
-  progress?: ITaskProgress;
-}
-
-export type ITaskContainer = DescribeContainerGroupsResponseBodyContainerGroups;
-
-export interface ITaskInfo {
-  width: number;
-  height: number;
-  frames: number;
-  fps: string;
-  formatName: string;
-  colorFamily: string;
-  bits: number;
-}
-
-export interface ITaskProgress {
-  frame: number;
-  fps: number;
-  bitrate: number;
-  totalSize: number;
-  outTimeMs: number;
-  outTime: string;
-  speed: number;
+function makeTaskId(runner: ITaskAliyunRunner) {
+  return `${runner.provider}:${runner.properties.containerGroupId}:${runner.properties.containerGroupName}`;
 }

@@ -1,14 +1,20 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import http from 'ky';
+import ky from 'ky';
 
-import type { QueryAccountBalanceResponseBodyData } from '@alicloud/bssopenapi20171214';
+import type {
+  IAccountBalance,
+} from '@vapourcontainers-houston/typing';
 
 export const useAccountStore = defineStore('account', () => {
-  const balance = ref<QueryAccountBalanceResponseBodyData>();
+  const balance = ref<IAccountBalance>();
+
+  const http = ky.extend({
+    prefixUrl: import.meta.env.VITE_SERVER_URL,
+  });
 
   async function fetchBalance() {
-    balance.value = await http.get(`${import.meta.env.VITE_SERVER_URL}/account/balance`).json();
+    balance.value = await http.get('account/balance').json();
   }
 
   return {

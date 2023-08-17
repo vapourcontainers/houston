@@ -1,11 +1,22 @@
-import { stringify } from 'querystring';
+import { Controller, Get, Param } from '@nestjs/common';
 
-import { Controller, Get, Param, Query } from '@nestjs/common';
-
-import { DescribeContainerGroupsRequest, DescribeContainerLogRequest, ExecContainerCommandRequest } from '@alicloud/eci20180808';
-import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
+import {
+  DescribeContainerGroupsRequest,
+  DescribeContainerGroupsResponseBodyContainerGroups,
+  DescribeContainerLogRequest,
+  ExecContainerCommandRequest,
+} from '@alicloud/eci20180808';
 
 import { AliyunService } from './aliyun.service';
+import extractFields from './util/extractFields';
+import toISOTime from './util/toISOTime';
+
+import {
+  ITaskRunnerStatus,
+  type ITaskAliyunRunner,
+  type ITaskFormat,
+  type ITaskProgress,
+} from '@vapourcontainers-houston/typing';
 
 @Controller('tasks')
 export class TaskController {
@@ -13,110 +24,100 @@ export class TaskController {
   }
 
   @Get()
-  async getContainers() {
+  async getRunners(): Promise<ITaskAliyunRunner[] | undefined> {
     const containers = await this.aliyun.eci.describeContainerGroups(new DescribeContainerGroupsRequest({
       regionId: this.aliyun.config.regionId,
     }));
+    if (!containers.body.containerGroups) return;
 
-    return containers.body.containerGroups;
+    return containers.body.containerGroups.map((container): ITaskAliyunRunner => ({
+      provider: 'aliyun',
+      properties: {
+        containerGroupId: container.containerGroupId!,
+        containerGroupName: container.containerGroupName!,
+        regionId: container.regionId!,
+        instanceType: container.instanceType!,
+        cpu: container.cpu!,
+        memory: container.memory!,
+      },
+      createdAt: toISOTime(container.creationTime)!,
+      startedAt: toISOTime(timeOfEvent(container, 'Pulling'))!,
+      finishedAt: toISOTime(container.failedTime || container.succeededTime),
+      status: ((status): ITaskRunnerStatus => {
+        switch (status) {
+          case 'Pending': return ITaskRunnerStatus.PREPARING;
+          case 'Running': return ITaskRunnerStatus.RUNNING;
+          case 'Succeeded': return ITaskRunnerStatus.FINISHED;
+          case 'Failed': return ITaskRunnerStatus.FAILED;
+          case 'Scheduling': return ITaskRunnerStatus.PREPARING;
+          case 'ScheduleFailed': return ITaskRunnerStatus.FAILED;
+          case 'Restarting': return ITaskRunnerStatus.PREPARING;
+          case 'Updating': return ITaskRunnerStatus.PREPARING;
+          case 'Terminating': return ITaskRunnerStatus.FINISHING;
+          case 'Expired': return ITaskRunnerStatus.FAILED;
+          default: return ITaskRunnerStatus.UNKNOWN;
+        }
+      })(container.status!),
+    }));
   }
 
-  @Get(':groupId/:name/info')
-  async getTaskInfo(@Param('groupId') groupId: string, @Param('name') name: string) {
+  @Get(':id/format')
+  async getTaskFormat(@Param('id') id: string): Promise<ITaskFormat | undefined> {
+    const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
+    if (!match) return;
+
     const output = await this.aliyun.eci.execContainerCommand(new ExecContainerCommandRequest({
       regionId: this.aliyun.config.regionId,
-      containerGroupId: groupId,
-      containerName: name,
+      containerGroupId: match[1],
+      containerName: match[2],
       command: '/home/info.sh',
       sync: true,
     }));
+    if (!output.body.syncResponse) return;
 
-    const info = output.body.syncResponse || '';
-
-    const width = parseInt(info.match(/^Width: (\d+)/m)?.[1] || '');
-    const height = parseInt(info.match(/^Height: (\d+)/m)?.[1] || '');
-    const frames = parseInt(info.match(/^Frames: (\d+)/m)?.[1] || '');
-    const fps = info.match(/^FPS: (\d+\/\d+)/m)?.[1];
-    const formatName = info.match(/^Format Name: (\S+)/m)?.[1];
-    const colorFamily = info.match(/^Color Family: (\S+)/m)?.[1];
-    const bits = parseInt(info.match(/^Bits: (\d+)/m)?.[1] || '');
-
-    return {
-      width,
-      height,
-      frames,
-      fps,
-      formatName,
-      colorFamily,
-      bits,
-    };
+    return extractFields(output.body.syncResponse, {
+      width: { regex: /^Width: (\d+)/m, transform: (m) => parseInt(m[1]!) },
+      height: { regex: /^Height: (\d+)/m, transform: (m) => parseInt(m[1]!) },
+      frames: { regex: /^Frames: (\d+)/m, transform: (m) => parseInt(m[1]!) },
+      fps: {
+        regex: /^FPS: (\d+)\/(\d+)/m,
+        transform: (m) => ({
+          numerator: parseInt(m[1]!),
+          denominator: parseInt(m[2]!),
+        }),
+      },
+      formatName: { regex: /^Format Name: (\S+)/m, transform: (m) => m[1]! },
+      colorFamily: { regex: /^Color Family: (\S+)/m, transform: (m) => m[1]! },
+      bitDepth: { regex: /^Bits: (\d+)/m, transform: (m) => parseInt(m[1]!) },
+    });
   }
 
-  @Get(':groupId/:name/progress')
-  async getTaskProgress(@Param('groupId') groupId: string, @Param('name') name: string) {
+  @Get(':id/progress')
+  async getTaskProgress(@Param('id') id: string): Promise<ITaskProgress | undefined> {
+    const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
+    if (!match) return;
+
     const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
       regionId: this.aliyun.config.regionId,
-      containerGroupId: groupId,
-      containerName: name,
+      containerGroupId: match[1],
+      containerName: match[2],
       tail: 20,
     }));
+    if (!log.body.content) return;
 
-    const progress: Record<string, string | number | undefined> = {};
+    const lines = log.body.content.split('\n').reverse().join('\n');
 
-    const lines = (log.body.content?.split('\n') ?? []);
-
-    for (const line of lines) {
-      const frame = line.match(/^frame=\s*(\d+)/);
-      if (frame?.[1]) {
-        progress['frame'] = parseInt(frame[1]);
-        continue;
-      }
-
-      const match = line.match(/^(\S+)=(\S+)/);
-      if (!match?.[2]) continue;
-      switch (match[1]) {
-        case 'fps':
-          progress['fps'] = parseFloat(match[2]);
-          break;
-        case 'bitrate':
-          progress['bitrate'] = match[2];
-          break;
-        case 'total_size':
-          progress['totalSize'] = parseInt(match[2]);
-          break;
-        case 'out_time_ms':
-          progress['outTimeMs'] = parseInt(match[2]);
-          break;
-        case 'out_time':
-          progress['outTime'] = match[2].slice(0, -3);
-          break;
-        case 'speed':
-          progress['speed'] = parseFloat(match[2]);
-          break;
-      }
-    }
-
-    return progress;
+    return extractFields(lines, {
+      processedFrames: { regex: /^frame=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) },
+      processedDurationMs: { regex: /^out_time_ms=(\d+)/m, transform: (m) => parseInt(m[1]!) },
+      fps: { regex: /^fps=(\d+)/m, transform: (m) => parseFloat(m[1]!) },
+      currentBitrate: { regex: /^bitrate=(\S+)kbits\/s/m, transform: (m) => parseFloat(m[1]!) * 1024 },
+      outputBytes: { regex: /^total_size=(\d+)/m, transform: (m) => parseInt(m[1]!) },
+      speed: { regex: /^speed=(\S+)/m, transform: (m) => parseFloat(m[1]!) },
+    });
   }
+}
 
-  @Get('cost')
-  async getCost(@Query('type') type: string) {
-    const objects = await this.aliyun.bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
-      productCode: 'ecs',
-      subscriptionType: 'PayAsYouGo',
-      region: this.aliyun.config.regionId,
-      moduleList: [
-        {
-          moduleCode: 'InstanceType',
-          priceType: 'Hour',
-          config: stringify(<Record<string, string>>{
-            'InstanceType': type,
-            'Region': this.aliyun.config.regionId,
-          }, ',', ':'),
-        },
-      ],
-    }));
-
-    return objects.body.data?.moduleDetails?.moduleDetail?.[0];
-  }
+function timeOfEvent(container: DescribeContainerGroupsResponseBodyContainerGroups, reason: string): string | undefined {
+  return container.events?.find((event) => event.reason == reason)?.firstTimestamp;
 }

@@ -2,22 +2,23 @@
   <a-skeleton active :loading="!progress" :title="false">
     <a-row :gutter="[16, 16]" :class="$style.progress">
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="帧" :value="progress?.frame" group-separator="" :suffix="info ? `/ ${info.frames}` : ''" />
+        <a-statistic title="帧" :value="progress!.processedFrames" group-separator=""
+          :suffix="format ? `/ ${format.frames}` : ''" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="帧率" :value="progress?.fps" :precision="2" suffix="fps" />
+        <a-statistic title="帧率" :value="progress!.fps" :precision="2" suffix="fps" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="大小" :value="size?.value" :precision="2" :suffix="size?.unit" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="时间码" :value="progress?.outTime" />
+        <a-statistic title="时间码" :value="timestamp" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="码率" :value="progress?.bitrate" />
+        <a-statistic title="码率" :value="progress!.currentBitrate / 1024" :precision="4" suffix="Kb/s" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
-        <a-statistic title="速度" :value="progress?.speed" :precision="4" suffix="×" />
+        <a-statistic title="速度" :value="progress!.speed" :precision="4" suffix="×" />
       </a-col>
       <a-col :xs="24" :sm="12" :md="8" :xl="4">
         <a-statistic title="已用时间（预计）" :value="formatDuration(elapsedTime)" />
@@ -40,39 +41,56 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useTaskStore, type ITask } from '@/stores/task';
-import useSize from '@/composables/useSize';
-import useInterval from '@/composables/useInterval';
-import useContainerStats from '@/composables/useContainerStats';
 import dayjs from 'dayjs';
 
+import { useTaskStore } from '@/stores/task';
+import { usePriceStore } from '@/stores/price';
+
+import type {
+  ITaskAliyunRunner,
+  ITaskItem,
+} from '@vapourcontainers-houston/typing';
+
+import useSize from '@/composables/useSize';
+import useInterval from '@/composables/useInterval';
+import useRunnerStats from '@/composables/useRunnerStats';
+
 const props = defineProps<{
-  task: ITask;
+  task: ITaskItem<ITaskAliyunRunner>;
 }>();
 
 const taskStore = useTaskStore();
+const priceStore = usePriceStore();
 
-const info = computed(() => props.task.info);
+const format = computed(() => props.task.format);
 const progress = computed(() => props.task.progress);
-const container = computed(() => props.task.container);
+const runner = computed(() => props.task.runner);
 
-const size = useSize(() => props.task.progress?.totalSize);
-const stats = useContainerStats(container);
+const size = useSize(() => props.task.progress?.outputBytes);
+const stats = useRunnerStats(runner);
 
-const percent = computed(() => {
-  if (!info.value || !progress.value) {
-    return 0;
-  }
-
-  return progress.value.frame! / info.value.frames!;
-});
-
-const price = computed(() => {
-  if (typeof container.value?.instanceType == 'undefined') {
+const timestamp = computed(() => {
+  if (!progress.value) {
     return undefined;
   }
 
-  return taskStore.priceOfTypes?.[container.value.instanceType]?.costAfterDiscount;
+  return dayjs.duration(progress.value.processedDurationMs).format('HH:mm:ss.SSS');
+});
+
+const percent = computed(() => {
+  if (!format.value || !progress.value) {
+    return 0;
+  }
+
+  return progress.value.processedFrames / format.value.frames;
+});
+
+const price = computed(() => {
+  if (!runner.value) {
+    return undefined;
+  }
+
+  return priceStore.runners[runner.value.properties.instanceType]?.price;
 });
 
 const elapsedTime = computed(() => {
@@ -84,11 +102,11 @@ const elapsedTime = computed(() => {
 });
 
 const estimatedTime = computed(() => {
-  if (!progress.value?.frame || !progress.value?.fps || !info.value?.frames) {
+  if (!progress.value || !format.value) {
     return undefined;
   }
 
-  const remainingFrames = info.value.frames - progress.value.frame;
+  const remainingFrames = format.value.frames - progress.value.processedFrames;
   const estimatedSeconds = remainingFrames / progress.value.fps;
 
   return elapsedTime.value?.add(estimatedSeconds, 'seconds');
@@ -114,9 +132,7 @@ function formatDuration(duration: plugin.Duration | undefined) {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-useInterval(() => taskStore.fetchTaskProgress(
-  props.task.container.containerGroupId!,
-  props.task.container.containerGroupName!), 1000);
+useInterval(() => taskStore.fetchTaskProgress(props.task.id), 1000);
 </script>
 
 <style lang="scss" module>

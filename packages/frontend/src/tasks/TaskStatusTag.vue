@@ -5,32 +5,26 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
+import {
+  ITaskRunnerStatus,
+} from '@vapourcontainers-houston/typing';
+
 const props = defineProps<{
-  status: string;
+  status: ITaskRunnerStatus;
 }>();
 
 const status = computed(() => {
   switch (props.status) {
-    case 'Pending':
+    case ITaskRunnerStatus.PREPARING:
       return { color: 'blue', text: '启动中' };
-    case 'Running':
+    case ITaskRunnerStatus.RUNNING:
       return { color: 'green', text: '运行中' };
-    case 'Succeeded':
+    case ITaskRunnerStatus.FINISHED:
       return { color: undefined, text: '完成' };
-    case 'Failed':
+    case ITaskRunnerStatus.FAILED:
       return { color: 'red', text: '失败' };
-    case 'Scheduling':
-      return { color: 'blue', text: '创建中' };
-    case 'ScheduleFailed':
-      return { color: 'red', text: '创建失败' };
-    case 'Restarting':
-      return { color: 'orange', text: '重启中' };
-    case 'Updating':
-      return { color: 'blue', text: '更新中' };
-    case 'Terminating':
+    case ITaskRunnerStatus.FINISHING:
       return { color: 'orange', text: '终止中' };
-    case 'Expired':
-      return { color: 'red', text: '过期' };
     default:
       return undefined;
   }

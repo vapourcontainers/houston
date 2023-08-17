@@ -4,25 +4,25 @@
       <a-list-item :key="item.id">
         <a-card>
           <template #title>
-            <a :href="linkToECI(item.container)" target="_blank" noreferrer>
-              {{ item.container.containerGroupId }}
+            <a :href="linkToECI(item.runner)" target="_blank" noreferrer>
+              {{ item.name }}
             </a>
           </template>
 
           <template #extra>
-            <task-status-tag :status="item.container.status" />
+            <task-status-tag :status="item.runner.status" />
           </template>
 
-          <template v-if="item.container.status == 'Running'">
+          <template v-if="item.runner.status == ITaskRunnerStatus.RUNNING">
             <task-progress :task="item" />
             <a-divider />
           </template>
 
-          <task-container :task="item" />
+          <task-runner :task="item" />
 
-          <template v-if="item.container.status == 'Running'">
+          <template v-if="item.runner.status == ITaskRunnerStatus.RUNNING">
             <a-divider />
-            <task-info :task="item" />
+            <task-format :task="item" />
           </template>
         </a-card>
       </a-list-item>
@@ -34,20 +34,25 @@
 import { watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { useTaskStore, type ITaskContainer } from '@/stores/task';
+import { useTaskStore } from '@/stores/task';
+
+import {
+  ITaskRunnerStatus,
+  type ITaskAliyunRunner,
+} from '@vapourcontainers-houston/typing';
 
 import TaskStatusTag from './TaskStatusTag.vue';
-import TaskInfo from './TaskInfo.vue';
+import TaskFormat from './TaskFormat.vue';
 import TaskProgress from './TaskProgress.vue';
-import TaskContainer from './TaskContainer.vue';
+import TaskRunner from './TaskRunner.vue';
 
 const route = useRoute();
 
 const taskStore = useTaskStore();
 watch(route.params, () => taskStore.fetchTasks(), { immediate: true });
 
-function linkToECI(container: ITaskContainer) {
-  return `https://eci.console.aliyun.com/#/eci/${container.regionId}/detail/${container.containerGroupId}/containers`;
+function linkToECI(runner: ITaskAliyunRunner) {
+  return `https://eci.console.aliyun.com/#/eci/${runner.properties.regionId}/detail/${runner.properties.containerGroupId}/containers`;
 }
 </script>
 

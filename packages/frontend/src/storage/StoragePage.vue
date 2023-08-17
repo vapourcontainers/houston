@@ -2,16 +2,16 @@
   <a-row :gutter="[16, 16]">
     <a-col :span="24">
       <a-card>
-        <a-skeleton active :loading="!storage" :title="false">
+        <a-skeleton active :loading="!storageStore.info" :title="false">
           <a-row :gutter="[16, 16]">
             <a-col :span="8">
               <a-statistic title="已用空间" :value="storage?.value" :precision="2" :suffix="storage?.unit" />
             </a-col>
             <a-col :span="8">
-              <a-statistic title="总对象数" :value="bucket.stat?.objectCount" />
+              <a-statistic title="总对象数" :value="storageStore.info?.objects" />
             </a-col>
             <a-col :span="8">
-              <a-statistic title="费用估计" :value="cost" :precision="3" prefix="￥" suffix="/ 天" />
+              <a-statistic title="费用估计" :value="priceStore.storage?.price" :precision="3" prefix="￥" suffix="/ 天" />
             </a-col>
           </a-row>
         </a-skeleton>
@@ -19,7 +19,7 @@
     </a-col>
     <a-col :span="24">
       <a-card>
-        <a-table :dataSource="bucket.objects" :columns="columns" :loading="!bucket.objects" />
+        <a-table :dataSource="storageStore.items" :columns="columns" :loading="!storageStore.items" />
       </a-card>
     </a-col>
   </a-row>
@@ -29,33 +29,30 @@
 import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type { TableColumnType } from 'ant-design-vue';
-import type { ObjectSummary } from '@alicloud/oss20190517';
 import dayjs from 'dayjs';
 
-import { useBucketStore } from '@/stores/bucket';
+import { useStorageStore } from '@/stores/storage';
+import { usePriceStore } from '@/stores/price';
+
+import type { IStorageItem } from '@vapourcontainers-houston/typing';
+
 import useSize from '@/composables/useSize';
 import { getSize } from '@/utils/readable';
 
 const route = useRoute();
 
-const bucket = useBucketStore();
-watch(route.params, () => bucket.fetchStat(), { immediate: true });
-watch(route.params, () => bucket.fetchObjects(), { immediate: true });
+const storageStore = useStorageStore();
+watch(route.params, () => storageStore.fetchInfo(), { immediate: true });
+watch(route.params, () => storageStore.fetchItems(), { immediate: true });
 
-const storage = useSize(() => bucket.stat?.storage);
+const priceStore = usePriceStore();
 
-const cost = computed(() => {
-  if (typeof bucket.cost?.costAfterDiscount == 'undefined') {
-    return undefined;
-  }
+const storage = useSize(() => storageStore.info?.capacityUsed);
 
-  return bucket.cost.costAfterDiscount * 24;
-});
-
-const columns: TableColumnType<ObjectSummary>[] = [
+const columns: TableColumnType<IStorageItem>[] = [
   {
     title: '名称',
-    dataIndex: 'key',
+    dataIndex: 'name',
   },
   {
     title: '大小',
@@ -73,14 +70,10 @@ const columns: TableColumnType<ObjectSummary>[] = [
   },
   {
     title: '最后修改时间',
-    dataIndex: 'lastModified',
+    dataIndex: 'modifiedAt',
     width: '20em',
     customRender({ record }) {
-      if (typeof record.lastModified == 'undefined') {
-        return undefined;
-      }
-
-      return dayjs(record.lastModified).format('YYYY-MM-DD HH:mm:ss');
+      return dayjs(record.modifiedAt).format('YYYY-MM-DD HH:mm:ss');
     },
   },
 ];

@@ -1,5 +1,19 @@
 # syntax=docker/dockerfile:1.4
 
+# stage: common
+
+FROM node:20-bookworm AS common
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/types/package.json ./packages/types/
+
+RUN npm ci
+
+COPY packages/types ./packages/types
+RUN npm -w @vapourcontainers-houston/types run build
+
 # stage: frontend
 
 FROM node:20-bookworm AS frontend
@@ -7,10 +21,14 @@ FROM node:20-bookworm AS frontend
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY packages/types/package.json ./packages/types/
 COPY packages/frontend/package.json ./packages/frontend/
 
 RUN npm ci
 
+COPY --link --from=common /app/packages/types/dist ./packages/types/dist
+
+EXPOSE 8080
 CMD npm -w @vapourcontainers-houston/frontend run dev
 
 # stage: server
@@ -20,8 +38,12 @@ FROM node:20-bookworm AS server
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY packages/types/package.json ./packages/types/
 COPY packages/server/package.json ./packages/server/
 
 RUN npm ci
 
+COPY --link --from=common /app/packages/types/dist ./packages/types/dist
+
+EXPOSE 3000
 CMD npm -w @vapourcontainers-houston/server run dev

@@ -20,7 +20,9 @@ services:
       target: server
     volumes:
       - './packages/server/src:/app/packages/server/src'
+      - './packages/server/rollup.config.js:/app/packages/server/rollup.config.js'
       - './packages/server/tsconfig.json:/app/packages/server/tsconfig.json'
+      - './config:/app/config'
     ports:
       - '3000:3000'
     entrypoint: npm -w @vapourcontainers-houston/server run dev

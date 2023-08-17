@@ -33,7 +33,7 @@ import dayjs from 'dayjs';
 import { useStorageStore } from '@/stores/storage';
 import { usePriceStore } from '@/stores/price';
 
-import type { IStorageItem } from '@vapourcontainers-houston/typing';
+import type { IStorageItem } from '@vapourcontainers-houston/types';
 
 import useSize from '@/composables/useSize';
 import { getSize } from '@/utils/readable';

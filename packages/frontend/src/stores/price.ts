@@ -4,7 +4,7 @@ import ky from 'ky';
 
 import type {
   IPrice,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 export const usePriceStore = defineStore('price', () => {
   const storage = ref<IPrice>();

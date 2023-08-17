@@ -4,7 +4,7 @@ import { AliyunService } from './aliyun.service';
 
 import type {
   IAccountBalance,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 @Controller('account')
 export class AccountController {

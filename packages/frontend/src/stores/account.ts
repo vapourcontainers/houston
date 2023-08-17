@@ -4,7 +4,7 @@ import ky from 'ky';
 
 import type {
   IAccountBalance,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 export const useAccountStore = defineStore('account', () => {
   const balance = ref<IAccountBalance>();

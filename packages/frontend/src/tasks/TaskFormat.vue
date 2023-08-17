@@ -19,7 +19,7 @@ import { useTaskStore } from '@/stores/task';
 import type {
   ITaskAliyunRunner,
   ITaskItem,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 const props = defineProps<{
   task: ITaskItem<ITaskAliyunRunner>;

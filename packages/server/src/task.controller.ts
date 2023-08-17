@@ -16,7 +16,7 @@ import {
   type ITaskAliyunRunner,
   type ITaskFormat,
   type ITaskProgress,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 @Controller('tasks')
 export class TaskController {

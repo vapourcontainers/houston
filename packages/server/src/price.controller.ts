@@ -8,7 +8,7 @@ import { AliyunService } from './aliyun.service';
 
 import type {
   IPrice,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 @Controller('prices')
 export class PriceController {

@@ -5,7 +5,7 @@ import ky from 'ky';
 import type {
   IStorageInfo,
   IStorageItem,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 import { usePriceStore } from './price';
 

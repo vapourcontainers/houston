@@ -18,7 +18,7 @@ import { usePriceStore } from '@/stores/price';
 import type {
   ITaskAliyunRunner,
   ITaskItem,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 import useRunnerStats from '@/composables/useRunnerStats';
 

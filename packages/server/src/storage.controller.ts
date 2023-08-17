@@ -10,7 +10,7 @@ import { getBucketStat } from './aliyun/oss';
 import type {
   IStorageInfo,
   IStorageItem,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 @Controller('storage')
 export class StorageController {

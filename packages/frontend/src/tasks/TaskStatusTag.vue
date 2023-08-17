@@ -7,7 +7,7 @@ import { computed } from 'vue';
 
 import {
   ITaskRunnerStatus,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 const props = defineProps<{
   status: ITaskRunnerStatus;

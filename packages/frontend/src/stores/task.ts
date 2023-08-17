@@ -8,7 +8,7 @@ import {
   type ITaskFormat,
   type ITaskProgress,
   ITaskRunnerStatus,
-} from '@vapourcontainers-houston/typing';
+} from '@vapourcontainers-houston/types';
 
 import { usePriceStore } from './price';
 

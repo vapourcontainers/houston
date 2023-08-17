@@ -109,11 +109,11 @@ export class TaskController {
 
     return extractFields(lines, {
       processedFrames: { regex: /^frame=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) },
-      processedDurationMs: { regex: /^out_time_ms=(\d+)/m, transform: (m) => parseInt(m[1]!) },
-      fps: { regex: /^fps=(\d+)/m, transform: (m) => parseFloat(m[1]!) },
-      currentBitrate: { regex: /^bitrate=(\S+)kbits\/s/m, transform: (m) => parseFloat(m[1]!) * 1024 },
-      outputBytes: { regex: /^total_size=(\d+)/m, transform: (m) => parseInt(m[1]!) },
-      speed: { regex: /^speed=(\S+)/m, transform: (m) => parseFloat(m[1]!) },
+      processedDurationMs: { regex: /^out_time_us=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) / 1000 },
+      fps: { regex: /^fps=\s*(\d+)/m, transform: (m) => parseFloat(m[1]!) },
+      currentBitrate: { regex: /^bitrate=\s*(\S+)kbits\/s/m, transform: (m) => parseFloat(m[1]!) * 1024 },
+      outputBytes: { regex: /^total_size=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) },
+      speed: { regex: /^speed=\s*(\S+)x/m, transform: (m) => parseFloat(m[1]!) },
     });
   }
 }

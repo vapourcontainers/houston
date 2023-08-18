@@ -29,14 +29,14 @@ export class AliyunService {
     ...this.baseConfig,
   }));
 
-  public readonly oss = new (sdk(OSS))(new Config({
-    ...this.baseConfig,
-    endpoint: `oss-${config.regionId}.aliyuncs.com`,
-  }));
-
   public readonly eci = new (sdk(ECI))(new Config({
     ...this.baseConfig,
     endpoint: `eci.${config.regionId}.aliyuncs.com`,
+  }));
+
+  public readonly oss = new (sdk(OSS))(new Config({
+    ...this.baseConfig,
+    endpoint: `oss-${config.regionId}.aliyuncs.com`,
   }));
 }
 

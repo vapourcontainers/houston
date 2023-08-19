@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus, Param } from '@nestjs/common';
 
 import {
   DescribeContainerGroupsRequest,
@@ -24,11 +24,11 @@ export class TaskController {
   }
 
   @Get()
-  async getRunners(): Promise<ITaskAliyunRunner[] | undefined> {
+  async getRunners(): Promise<ITaskAliyunRunner[]> {
     const containers = await this.aliyun.eci.describeContainerGroups(new DescribeContainerGroupsRequest({
       regionId: this.aliyun.config.regionId,
     }));
-    if (!containers.body.containerGroups) return;
+    if (!containers.body.containerGroups) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return containers.body.containerGroups.map((container): ITaskAliyunRunner => ({
       provider: 'aliyun',
@@ -64,7 +64,7 @@ export class TaskController {
   @Get(':id/format')
   async getTaskFormat(@Param('id') id: string): Promise<ITaskFormat | undefined> {
     const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
-    if (!match) return;
+    if (!match) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     const output = await this.aliyun.eci.execContainerCommand(new ExecContainerCommandRequest({
       regionId: this.aliyun.config.regionId,
@@ -73,7 +73,7 @@ export class TaskController {
       command: '/home/info.sh',
       sync: true,
     }));
-    if (!output.body.syncResponse) return;
+    if (!output.body.syncResponse) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return extractFields(output.body.syncResponse, {
       width: { regex: /^Width: (\d+)/m, transform: (m) => parseInt(m[1]!) },
@@ -95,7 +95,7 @@ export class TaskController {
   @Get(':id/progress')
   async getTaskProgress(@Param('id') id: string): Promise<ITaskProgress | undefined> {
     const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
-    if (!match) return;
+    if (!match) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
       regionId: this.aliyun.config.regionId,
@@ -103,7 +103,7 @@ export class TaskController {
       containerName: match[2],
       tail: 20,
     }));
-    if (!log.body.content) return;
+    if (!log.body.content) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     const lines = log.body.content.split('\n').reverse().join('\n');
 

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 
 import { ListObjectsV2Request } from '@alicloud/oss20190517';
 
@@ -18,9 +18,9 @@ export class StorageController {
   }
 
   @Get()
-  async getInfo(): Promise<IStorageInfo | undefined> {
+  async getInfo(): Promise<IStorageInfo> {
     const stat = await getBucketStat(this.aliyun.oss, this.aliyun.config.oss.bucket);
-    if (!stat.body) return;
+    if (!stat.body) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return {
       capacityUsed: stat.body.storage ?? 0,
@@ -30,10 +30,10 @@ export class StorageController {
   }
 
   @Get('items')
-  async listItems(): Promise<IStorageItem[] | undefined> {
+  async listItems(): Promise<IStorageItem[]> {
     const objects = await this.aliyun.oss.listObjectsV2(this.aliyun.config.oss.bucket,
       new ListObjectsV2Request());
-    if (!objects.body?.contents) return;
+    if (!objects.body?.contents) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return objects.body.contents.map((object): IStorageItem => ({
       name: object.key!,

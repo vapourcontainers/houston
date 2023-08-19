@@ -1,6 +1,6 @@
 import { stringify } from 'querystring';
 
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus, Query } from '@nestjs/common';
 
 import { GetPayAsYouGoPriceRequest } from '@alicloud/bssopenapi20171214';
 
@@ -16,7 +16,7 @@ export class PriceController {
   }
 
   @Get('runner')
-  async getRunnerPrice(@Query('type') type: string): Promise<IPrice | undefined> {
+  async getRunnerPrice(@Query('type') type: string): Promise<IPrice> {
     const price = await this.aliyun.bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
       productCode: 'ecs',
       subscriptionType: 'PayAsYouGo',
@@ -34,7 +34,7 @@ export class PriceController {
     }));
 
     const cost = price.body.data?.moduleDetails?.moduleDetail?.[0]?.costAfterDiscount;
-    if (typeof cost == 'undefined') return;
+    if (typeof cost == 'undefined') throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return {
       price: cost,
@@ -43,7 +43,7 @@ export class PriceController {
   }
 
   @Get('storage')
-  async getStoragePrice(@Query('used') storage?: string): Promise<IPrice | undefined> {
+  async getStoragePrice(@Query('used') storage?: string): Promise<IPrice> {
     const price = await this.aliyun.bss.getPayAsYouGoPrice(new GetPayAsYouGoPriceRequest({
       productCode: 'oss',
       subscriptionType: 'PayAsYouGo',
@@ -62,7 +62,7 @@ export class PriceController {
     }));
 
     const cost = price.body.data?.moduleDetails?.moduleDetail?.[0]?.costAfterDiscount;
-    if (typeof cost == 'undefined') return;
+    if (typeof cost == 'undefined') throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return {
       price: cost * 24,

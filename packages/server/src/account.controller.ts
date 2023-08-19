@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 
 import { AliyunService } from './aliyun.service';
 
@@ -12,9 +12,9 @@ export class AccountController {
   }
 
   @Get('balance')
-  async getBalance(): Promise<IAccountBalance | undefined> {
+  async getBalance(): Promise<IAccountBalance> {
     const balance = await this.aliyun.bss.queryAccountBalance();
-    if (!balance.body) return;
+    if (!balance.body) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
     return {
       available: parseFloat(balance.body.data?.availableAmount ?? '0'),

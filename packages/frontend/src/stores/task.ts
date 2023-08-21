@@ -10,13 +10,15 @@ import {
   ITaskRunnerStatus,
 } from '@vapourcontainers-houston/types';
 
+import { useImmer } from '@/composables/useImmer';
+
 import { usePriceStore } from './price';
 
 export const useTaskStore = defineStore('task', () => {
   const taskIds = ref<string[]>();
-  const taskItems = ref<Record<string, ITaskItem<ITaskAliyunRunner>>>();
+  const [taskItems, updateTaskItems] = useImmer<Record<string, ITaskItem<ITaskAliyunRunner>>>({});
 
-  const tasks = computed(() => taskIds.value?.map((id) => taskItems.value![id]));
+  const tasks = computed(() => taskIds.value?.map((id) => taskItems.value[id]));
   const runningTasks = computed(() => tasks.value?.filter((task) => task.runner.status == ITaskRunnerStatus.RUNNING));
 
   const priceStore = usePriceStore();
@@ -30,18 +32,16 @@ export const useTaskStore = defineStore('task', () => {
 
     if (!tasks) {
       taskIds.value = undefined;
-      taskItems.value = undefined;
       return;
     }
 
     taskIds.value = tasks.map((task) => task.id);
-    taskItems.value = tasks.reduce((items, task) => {
-      items[task.id] = {
-        ...items[task.id],
-        ...task,
-      };
-      return items;
-    }, taskItems.value || {});
+
+    updateTaskItems((items) => {
+      for (const task of tasks) {
+        items[task.id] = Object.assign(items[task.id] || {}, task);
+      }
+    });
 
     for (const task of tasks) {
       const type = task.runner.properties.instanceType;
@@ -53,18 +53,16 @@ export const useTaskStore = defineStore('task', () => {
 
   async function fetchTaskFormat(id: string) {
     const format = await http.get(`tasks/${encodeURIComponent(id)}/format`).json<ITaskFormat>();
-    taskItems.value = {
-      ...taskItems.value,
-      [id]: { ...taskItems.value![id], format },
-    };
+    updateTaskItems((items) => {
+      items[id].format = format;
+    });
   }
 
   async function fetchTaskProgress(id: string) {
     const progress = await http.get(`tasks/${encodeURIComponent(id)}/progress`).json<ITaskProgress>();
-    taskItems.value = {
-      ...taskItems.value,
-      [id]: { ...taskItems.value![id], progress },
-    };
+    updateTaskItems((items) => {
+      items[id].progress = progress;
+    });
   }
 
   return {

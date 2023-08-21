@@ -1,11 +1,30 @@
+import { IProject } from './project';
+
 export interface ITaskItem<
   Runner extends ITaskRunner<unknown>,
 > {
   id: string;
   name: string;
   runner: Runner;
+  stage: ITaskStage;
+  project: IProject | undefined;
+  downloadProgress: ITaskFileProgress | undefined;
+  uploadProgress: ITaskFileProgress | undefined;
   format: ITaskFormat | undefined;
   progress: ITaskProgress | undefined;
+}
+
+export enum ITaskStage {
+  IDLE = 'idle',
+  DOWNLOAD = 'download',
+  ENCODE = 'encode',
+  UPLOAD = 'upload',
+}
+
+export interface ITaskFileProgress {
+  fileIndex: number;
+  currentBytes: number;
+  totalBytes: number;
 }
 
 export interface ITaskFormat {

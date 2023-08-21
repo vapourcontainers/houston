@@ -13,6 +13,8 @@
             <task-status-tag :status="item.runner.status" />
           </template>
 
+          <task-stage :task="item" />
+
           <template v-if="item.runner.status == ITaskRunnerStatus.RUNNING">
             <task-progress :task="item" />
             <a-divider />
@@ -41,6 +43,7 @@ import {
 } from '@vapourcontainers-houston/types';
 
 import TaskStatusTag from './TaskStatusTag.vue';
+import TaskStage from './TaskStage.vue';
 import TaskFormat from './TaskFormat.vue';
 import TaskProgress from './TaskProgress.vue';
 import TaskRunner from './TaskRunner.vue';

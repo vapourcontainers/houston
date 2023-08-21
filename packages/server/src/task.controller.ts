@@ -1,26 +1,41 @@
 import { Controller, Get, HttpException, HttpStatus, Param } from '@nestjs/common';
+import { WebSocket } from 'ws';
+import { once } from 'events';
 
 import {
   DescribeContainerGroupsRequest,
   DescribeContainerGroupsResponseBodyContainerGroups,
-  DescribeContainerLogRequest,
   ExecContainerCommandRequest,
 } from '@alicloud/eci20180808';
 
 import { AliyunService } from './aliyun.service';
-import extractFields from './util/extractFields';
 import toISOTime from './util/toISOTime';
 
 import {
   ITaskRunnerStatus,
+  ITaskStage,
+  type IProject,
   type ITaskAliyunRunner,
+  type ITaskFileProgress,
   type ITaskFormat,
   type ITaskItem,
   type ITaskProgress,
 } from '@vapourcontainers-houston/types';
 
+interface ITaskState {
+  socket: WebSocket | undefined;
+  stage: ITaskStage;
+  project: IProject | undefined;
+  downloadProgress: ITaskFileProgress | undefined;
+  uploadProgress: ITaskFileProgress | undefined;
+  format: ITaskFormat | undefined;
+  progress: ITaskProgress | undefined;
+}
+
 @Controller('tasks')
 export class TaskController {
+  private states: Record<string, ITaskState> = {};
+
   constructor(private readonly aliyun: AliyunService) {
   }
 
@@ -31,69 +46,126 @@ export class TaskController {
     }));
     if (!containers.body.containerGroups) throw new HttpException({}, HttpStatus.NOT_FOUND);
 
-    return containers.body.containerGroups.map((container): ITaskItem<ITaskAliyunRunner> => ({
-      id: makeTaskId('aliyun', container),
-      name: container.containerGroupId!,
-      runner: mapAliyunRunner(container),
+    return containers.body.containerGroups.map((container): ITaskItem<ITaskAliyunRunner> => {
+      const id = makeTaskId('aliyun', container);
+      const runner = mapAliyunRunner(container);
+
+      if (runner.status == ITaskRunnerStatus.RUNNING) {
+        this.getState(id); // no await by design
+      } else {
+        delete this.states[id];
+      }
+
+      return {
+        id: id,
+        name: container.containerGroupId!,
+        runner: runner,
+        stage: this.states[id]?.stage ?? ITaskStage.IDLE,
+        project: this.states[id]?.project,
+        downloadProgress: this.states[id]?.downloadProgress,
+        uploadProgress: this.states[id]?.uploadProgress,
+        format: this.states[id]?.format,
+        progress: this.states[id]?.progress,
+      };
+    });
+  }
+
+  private async getState(id: string): Promise<ITaskState | undefined> {
+    const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
+    if (!match) return undefined;
+
+    if (typeof this.states[id] != 'undefined') {
+      return this.states[id];
+    }
+
+    const state: ITaskState = this.states[id] = {
+      socket: undefined,
+      stage: ITaskStage.IDLE,
+      project: undefined,
+      downloadProgress: undefined,
+      uploadProgress: undefined,
       format: undefined,
       progress: undefined,
-    }));
+    };
+
+    let socketUri: string | undefined;
+    try {
+      const output = await this.aliyun.eci.execContainerCommand(new ExecContainerCommandRequest({
+        regionId: this.aliyun.config.regionId,
+        containerGroupId: match[1],
+        containerName: match[2],
+        command: '/monitor.sh',
+      }));
+
+      if (!output.body.webSocketUri) {
+        delete this.states[id];
+        return undefined;
+      }
+
+      socketUri = output.body.webSocketUri;
+    } catch (e) {
+      delete this.states[id];
+      return undefined;
+    }
+
+    const ws = new WebSocket(socketUri);
+
+    ws.once('open', () => {
+    });
+
+    ws.once('close', () => {
+      delete this.states[id];
+    });
+
+    ws.once('error', (_err) => {
+      delete this.states[id];
+    });
+
+    ws.on('message', (data) => {
+      const message = data.slice(1).toString().trim();
+      if (!message) return;
+
+      const event = parseEvent(message);
+      switch (event?.name) {
+        case 'stage':
+          state.stage = event.data as ITaskStage;
+          break;
+        case 'project':
+          state.project = event.data as IProject;
+          break;
+        case 'download-progress':
+          state.downloadProgress = event.data as ITaskFileProgress;
+          break;
+        case 'upload-progress':
+          state.uploadProgress = event.data as ITaskFileProgress;
+          break;
+        case 'format':
+          state.format = event.data as ITaskFormat;
+          break;
+        case 'progress':
+          state.progress = event.data as ITaskProgress;
+          break;
+      }
+    });
+
+    await once(ws, 'open');
+
+    state.socket = ws;
+    return this.states[id];
   }
 
   @Get(':id/format')
   async getTaskFormat(@Param('id') id: string): Promise<ITaskFormat | undefined> {
-    const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
-    if (!match) throw new HttpException({}, HttpStatus.NOT_FOUND);
-
-    const output = await this.aliyun.eci.execContainerCommand(new ExecContainerCommandRequest({
-      regionId: this.aliyun.config.regionId,
-      containerGroupId: match[1],
-      containerName: match[2],
-      command: '/home/info.sh',
-      sync: true,
-    }));
-    if (!output.body.syncResponse) throw new HttpException({}, HttpStatus.NOT_FOUND);
-
-    return extractFields(output.body.syncResponse, {
-      width: { regex: /^Width: (\d+)/m, transform: (m) => parseInt(m[1]!) },
-      height: { regex: /^Height: (\d+)/m, transform: (m) => parseInt(m[1]!) },
-      frames: { regex: /^Frames: (\d+)/m, transform: (m) => parseInt(m[1]!) },
-      fps: {
-        regex: /^FPS: (\d+)\/(\d+)/m,
-        transform: (m) => ({
-          numerator: parseInt(m[1]!),
-          denominator: parseInt(m[2]!),
-        }),
-      },
-      formatName: { regex: /^Format Name: (\S+)/m, transform: (m) => m[1]! },
-      colorFamily: { regex: /^Color Family: (\S+)/m, transform: (m) => m[1]! },
-      bitDepth: { regex: /^Bits: (\d+)/m, transform: (m) => parseInt(m[1]!) },
-    });
+    const state = await this.getState(id);
+    if (!state) throw new HttpException({}, HttpStatus.NOT_FOUND);
+    return state.format;
   }
 
   @Get(':id/progress')
   async getTaskProgress(@Param('id') id: string): Promise<ITaskProgress | undefined> {
-    const match = id.match(/^aliyun:([^:]+):([^:]+)$/);
-    if (!match) throw new HttpException({}, HttpStatus.NOT_FOUND);
-
-    const log = await this.aliyun.eci.describeContainerLog(new DescribeContainerLogRequest({
-      regionId: this.aliyun.config.regionId,
-      containerGroupId: match[1],
-      containerName: match[2],
-      tail: 20,
-    }));
-    if (!log.body.content) throw new HttpException({}, HttpStatus.NOT_FOUND);
-
-    const lines = log.body.content.split('\n').reverse().join('\n');
-
-    return extractFields(lines, {
-      processedFrames: { regex: /^frame=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) },
-      processedDurationMs: { regex: /^out_time_us=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) / 1000 },
-      fps: { regex: /^fps=\s*(\d+)/m, transform: (m) => parseFloat(m[1]!) },
-      currentBitrate: { regex: /^bitrate=\s*(\S+)kbits\/s/m, transform: (m) => parseFloat(m[1]!) * 1024 },
-      outputBytes: { regex: /^total_size=\s*(\d+)/m, transform: (m) => parseInt(m[1]!) },
-      speed: { regex: /^speed=\s*(\S+)x/m, transform: (m) => parseFloat(m[1]!) },
-    });
+    const state = await this.getState(id);
+    if (!state) throw new HttpException({}, HttpStatus.NOT_FOUND);
+    return state.progress;
   }
 }
 
@@ -137,4 +209,18 @@ function mapAliyunRunner(container: IAliyunContainer): ITaskAliyunRunner {
 
 function makeTaskId(provider: string, container: IAliyunContainer) {
   return `${provider}:${container.containerGroupId}:${container.containerGroupName}`;
+}
+
+interface IEvent<T = unknown> {
+  name: string;
+  data: T | undefined;
+}
+
+function parseEvent(message: string): IEvent | undefined {
+  try {
+    const { name, data } = JSON.parse(message);
+    return { name, data };
+  } catch (e) {
+    return undefined;
+  }
 }

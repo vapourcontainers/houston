@@ -26,27 +26,25 @@ export const useTaskStore = defineStore('task', () => {
   });
 
   async function fetchTasks() {
-    const runners = await http.get('tasks').json<ITaskAliyunRunner[]>();
+    const tasks = await http.get('tasks').json<ITaskItem<ITaskAliyunRunner>[]>();
 
-    if (!runners) {
+    if (!tasks) {
       taskIds.value = undefined;
       taskItems.value = undefined;
       return;
     }
 
-    taskIds.value = runners.map((runner) => makeTaskId(runner));
-    taskItems.value = runners.reduce((items, runner) => {
-      items[makeTaskId(runner)] = {
-        ...items[makeTaskId(runner)],
-        id: makeTaskId(runner),
-        name: runner.properties.containerGroupId,
-        runner: runner,
+    taskIds.value = tasks.map((task) => task.id);
+    taskItems.value = tasks.reduce((items, task) => {
+      items[task.id] = {
+        ...items[task.id],
+        ...task,
       };
       return items;
     }, taskItems.value || {});
 
-    for (const runner of runners) {
-      const type = runner.properties.instanceType;
+    for (const task of tasks) {
+      const type = task.runner.properties.instanceType;
       if (typeof priceStore.runners[type] == 'undefined') {
         priceStore.fetchRunner(type);
       }
@@ -77,7 +75,3 @@ export const useTaskStore = defineStore('task', () => {
     fetchTaskProgress,
   };
 });
-
-function makeTaskId(runner: ITaskAliyunRunner) {
-  return `${runner.provider}:${runner.properties.containerGroupId}:${runner.properties.containerGroupName}`;
-}

@@ -4,7 +4,7 @@
       <a-descriptions-item label="宽">{{ format?.width }}</a-descriptions-item>
       <a-descriptions-item label="高">{{ format?.height }}</a-descriptions-item>
       <a-descriptions-item label="帧数">{{ format?.frames }}</a-descriptions-item>
-      <a-descriptions-item label="FPS">{{ format?.fps.numerator }}/{{ format?.fps.denominator }}</a-descriptions-item>
+      <a-descriptions-item label="FPS">{{ format?.fps?.numerator }}/{{ format?.fps?.denominator }}</a-descriptions-item>
       <a-descriptions-item label="格式">{{ format?.formatName }}</a-descriptions-item>
       <a-descriptions-item label="色彩">{{ format?.colorFamily }}</a-descriptions-item>
       <a-descriptions-item label="色深">{{ format?.bitDepth }}</a-descriptions-item>

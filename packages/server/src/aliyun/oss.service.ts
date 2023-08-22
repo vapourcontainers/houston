@@ -1,7 +1,50 @@
-import { OpenApiRequest, Params } from '@alicloud/openapi-client';
-import type Client from '@alicloud/oss20190517';
-import { RuntimeOptions } from '@alicloud/tea-util';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { Config, OpenApiRequest, Params } from '@alicloud/openapi-client';
 import { Model, cast } from '@alicloud/tea-typescript';
+import { RuntimeOptions } from '@alicloud/tea-util';
+import OSS from '@alicloud/oss20190517';
+
+import { constructorOf } from './sdk';
+import { CONFIG, type IConfig } from './config.service';
+
+@Injectable()
+export class OSSService extends constructorOf(OSS) {
+  constructor(@Inject(CONFIG) config: IConfig) {
+    super(new Config({
+      accessKeyId: config.accessKeyId,
+      accessKeySecret: config.accessSecret,
+      regionId: config.regionId,
+      endpoint: `oss-${config.regionId}.aliyuncs.com`,
+    }));
+  }
+
+  async getBucketStat(bucket: string): Promise<GetBucketStatResponse> {
+    const req = new OpenApiRequest({
+      hostMap: {
+        bucket: bucket,
+      },
+      headers: {},
+    });
+
+    const params = new Params({
+      action: "GetBucketStat",
+      version: "2019-05-17",
+      protocol: "HTTPS",
+      pathname: `/?stat`,
+      method: "GET",
+      authType: "AK",
+      style: "ROA",
+      reqBodyType: "xml",
+      bodyType: "xml",
+    });
+
+    const options = new RuntimeOptions({
+    });
+
+    return cast(await this.execute(params, req, options), new GetBucketStatResponse({}));
+  }
+}
 
 export class GetBucketStatResponse extends Model {
   headers: Record<string, string> = {};
@@ -92,30 +135,4 @@ export class BucketStat extends Model {
   constructor(map?: Record<string, any>) {
     super(map);
   }
-}
-
-export async function getBucketStat(client: Client, bucket: string) {
-  const apiReq = new OpenApiRequest({
-    hostMap: {
-      bucket: bucket,
-    },
-    headers: {},
-  });
-
-  const apiParams = new Params({
-    action: "GetBucketStat",
-    version: "2019-05-17",
-    protocol: "HTTPS",
-    pathname: `/?stat`,
-    method: "GET",
-    authType: "AK",
-    style: "ROA",
-    reqBodyType: "xml",
-    bodyType: "xml",
-  });
-
-  const apiRuntime = new RuntimeOptions({
-  });
-
-  return cast<GetBucketStatResponse>(await client.execute(apiParams, apiReq, apiRuntime), new GetBucketStatResponse({}));
 }

@@ -1,4 +1,4 @@
-import { IProject } from './project';
+import type { IProject } from './project';
 
 export interface ITaskItem<
   Runner extends ITaskRunner<unknown>,
@@ -6,6 +6,10 @@ export interface ITaskItem<
   id: string;
   name: string;
   runner: Runner;
+  state: ITaskState | undefined;
+}
+
+export interface ITaskState {
   stage: ITaskStage;
   project: IProject | undefined;
   downloadProgress: ITaskFileProgress | undefined;

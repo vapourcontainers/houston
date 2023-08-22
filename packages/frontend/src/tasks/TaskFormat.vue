@@ -13,8 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue';
-import { useTaskStore } from '@/stores/task';
+import { computed } from 'vue';
 
 import type {
   ITaskAliyunRunner,
@@ -25,9 +24,5 @@ const props = defineProps<{
   task: ITaskItem<ITaskAliyunRunner>;
 }>();
 
-const taskStore = useTaskStore();
-
-onMounted(() => taskStore.fetchTaskFormat(props.task.id));
-
-const format = computed(() => props.task.format);
+const format = computed(() => props.task.state?.format);
 </script>

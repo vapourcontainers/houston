@@ -62,11 +62,11 @@ const props = defineProps<{
 const taskStore = useTaskStore();
 const priceStore = usePriceStore();
 
-const format = computed(() => props.task.format);
-const progress = computed(() => props.task.progress);
+const format = computed(() => props.task.state?.format);
+const progress = computed(() => props.task.state?.progress);
 const runner = computed(() => props.task.runner);
 
-const size = useSize(() => props.task.progress?.outputBytes);
+const size = useSize(() => props.task.state?.progress?.outputBytes);
 const stats = useRunnerStats(runner);
 
 const timecode = computed(() => {
@@ -132,7 +132,7 @@ function formatDuration(duration: plugin.Duration | undefined, precision = 0) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-useInterval(() => taskStore.fetchTaskProgress(props.task.id), 1000);
+useInterval(() => taskStore.fetchTaskState(props.task.id), 1000);
 </script>
 
 <style lang="scss" module>

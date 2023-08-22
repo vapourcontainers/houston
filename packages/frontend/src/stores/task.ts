@@ -5,9 +5,8 @@ import ky from 'ky';
 import {
   type ITaskItem,
   type ITaskAliyunRunner,
-  type ITaskFormat,
-  type ITaskProgress,
   ITaskRunnerStatus,
+  type ITaskState,
 } from '@vapourcontainers-houston/types';
 
 import { useImmer } from '@/composables/useImmer';
@@ -51,17 +50,10 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
-  async function fetchTaskFormat(id: string) {
-    const format = await http.get(`tasks/${encodeURIComponent(id)}/format`).json<ITaskFormat>();
+  async function fetchTaskState(id: string) {
+    const state = await http.get(`tasks/${encodeURIComponent(id)}/state`).json<ITaskState>();
     updateTaskItems((items) => {
-      items[id].format = format;
-    });
-  }
-
-  async function fetchTaskProgress(id: string) {
-    const progress = await http.get(`tasks/${encodeURIComponent(id)}/progress`).json<ITaskProgress>();
-    updateTaskItems((items) => {
-      items[id].progress = progress;
+      items[id].state = state;
     });
   }
 
@@ -69,7 +61,6 @@ export const useTaskStore = defineStore('task', () => {
     tasks,
     runningTasks,
     fetchTasks,
-    fetchTaskFormat,
-    fetchTaskProgress,
+    fetchTaskState,
   };
 });

@@ -40,7 +40,7 @@ const steps = computed((): {
     case ITaskRunnerStatus.FINISHED:
       return { current: 4, percent: undefined, status: 'finish' };
     case ITaskRunnerStatus.RUNNING:
-      switch (props.task.stage) {
+      switch (props.task.state?.stage) {
         case ITaskStage.IDLE:
           return { current: 0, percent: undefined, status: 'process' };
         case ITaskStage.DOWNLOAD:
@@ -56,7 +56,7 @@ const steps = computed((): {
 });
 
 const downloadProgress = computed(() => {
-  const { project, downloadProgress } = props.task;
+  const { project, downloadProgress } = props.task.state ?? {};
   if (!project || !downloadProgress) {
     return undefined;
   }
@@ -68,7 +68,7 @@ const downloadProgress = computed(() => {
 });
 
 const encodeProgress = computed(() => {
-  const { format, progress } = props.task;
+  const { format, progress } = props.task.state ?? {};
   if (!format || !progress) {
     return undefined;
   }
@@ -77,7 +77,7 @@ const encodeProgress = computed(() => {
 });
 
 const uploadProgress = computed(() => {
-  const { uploadProgress } = props.task;
+  const { uploadProgress } = props.task.state ?? {};
   if (!uploadProgress) {
     return undefined;
   }

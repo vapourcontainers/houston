@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import useInterval from '@/composables/useInterval';
 
 import { useTaskStore } from '@/stores/task';
 
@@ -49,7 +49,7 @@ import TaskProgress from './TaskProgress.vue';
 import TaskRunner from './TaskRunner.vue';
 
 const taskStore = useTaskStore();
-onMounted(() => taskStore.fetchTasks());
+useInterval(() => taskStore.fetchTasks(), 10 * 1000);
 
 function linkToECI(runner: ITaskAliyunRunner) {
   return `https://eci.console.aliyun.com/#/eci/${runner.properties.regionId}/detail/${runner.properties.containerGroupId}/containers`;

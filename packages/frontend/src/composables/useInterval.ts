@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted } from 'vue';
 
-export default function useIntreval(handler: () => void, interval: number) {
+export default function useInterval(handler: () => void, interval: number) {
   let timer: ReturnType<typeof setInterval> | undefined;
 
   onMounted(() => {

@@ -42,8 +42,11 @@ export const useTaskStore = defineStore('task', () => {
       }
     });
 
+    const types = new Set<string>();
     for (const task of tasks) {
-      const type = task.runner.properties.instanceType;
+      types.add(task.runner.properties.instanceType);
+    }
+    for (const type of types) {
       if (typeof priceStore.runners[type] == 'undefined') {
         priceStore.fetchRunner(type);
       }

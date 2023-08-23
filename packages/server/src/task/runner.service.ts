@@ -1,12 +1,13 @@
+import EventEmitter, { once } from 'node:events';
+import { promisify } from 'node:util';
+
 import { Inject, Injectable } from '@nestjs/common';
 import { WebSocket } from 'ws';
-import EventEmitter, { once } from 'events';
 
 import { ExecContainerCommandRequest } from '@alicloud/eci20180808';
 
 import { CONFIG, type IConfig } from '../aliyun/config.service';
 import { ECIService } from '../aliyun/eci.service';
-import { promisify } from 'util';
 
 export const WEBSOCKET_PENDING = 'PENDING';
 export type WEBSOCKET_PENDING = typeof WEBSOCKET_PENDING;
@@ -39,6 +40,8 @@ export class RunnerManager extends EventEmitter {
         containerGroupId: match[1],
         containerName: match[2],
         command: '/monitor.sh',
+        stdin: true,
+        TTY: true,
       }));
 
       if (!output.body.webSocketUri) {
@@ -82,14 +85,10 @@ export class RunnerManager extends EventEmitter {
 
   async close(id: string): Promise<void> {
     const socket = this.sockets[id];
-
     if (socket instanceof WebSocket) {
       const send = promisify(socket.send.bind(socket));
-      await send(Buffer.from([0x01, 0x03])); // send ETX (Ctrl-C)
-      socket.close();
+      await send(Buffer.from([0x00, 0x03])); // send ETX (Ctrl-C)
     }
-
-    delete this.sockets[id];
   }
 }
 

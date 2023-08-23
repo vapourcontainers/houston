@@ -15,6 +15,7 @@ import { PriceService } from './price/price.service';
 import { StorageService } from './storage/storage.service';
 import { RunnerManager } from './task/runner.service';
 import { TaskService } from './task/task.service';
+import { TaskGateway } from './task/task.gateway';
 
 const repoRoot = new URL('../../../', import.meta.url).pathname;
 const configFile = resolve(repoRoot, 'config/config.yaml');
@@ -38,6 +39,7 @@ const configFile = resolve(repoRoot, 'config/config.yaml');
     StorageService,
     RunnerManager,
     TaskService,
+    TaskGateway,
   ],
 })
 export class AppModule {

@@ -9,11 +9,8 @@
     "baseUrl": ".",
     "module": "ES2022",
     "moduleResolution": "Bundler",
+    "verbatimModuleSyntax": true,
     "declaration": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "removeComments": true,
   },
   "include": [
     "src/**/*"

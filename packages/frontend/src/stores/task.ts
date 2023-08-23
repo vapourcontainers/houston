@@ -1,6 +1,7 @@
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { defineStore } from 'pinia';
 import ky from 'ky';
+import { io } from 'socket.io-client';
 
 import {
   type ITaskItem,
@@ -15,7 +16,7 @@ import { usePriceStore } from './price';
 
 export const useTaskStore = defineStore('task', () => {
   const taskIds = ref<string[]>();
-  const [taskItems, updateTaskItems] = useImmer<Record<string, ITaskItem<ITaskAliyunRunner>>>({});
+  const [taskItems, mutateTaskItems] = useImmer<Record<string, ITaskItem<ITaskAliyunRunner>>>({});
 
   const tasks = computed(() => taskIds.value?.map((id) => taskItems.value[id]));
   const runningTasks = computed(() => tasks.value?.filter((task) => task.runner.status == ITaskRunnerStatus.RUNNING));
@@ -23,12 +24,24 @@ export const useTaskStore = defineStore('task', () => {
   const priceStore = usePriceStore();
 
   const http = ky.extend({
-    prefixUrl: import.meta.env.VITE_SERVER_URL,
+    prefixUrl: `${import.meta.env.VITE_SERVER_URL}/tasks`,
   });
 
-  async function fetchTasks() {
-    const tasks = await http.get('tasks').json<ITaskItem<ITaskAliyunRunner>[]>();
+  const socket = io(`${import.meta.env.VITE_SERVER_URL}/tasks`, {
+    transports: ['websocket'],
+    autoConnect: false,
+  });
 
+  function connectIO() {
+    onMounted(() => socket.connect());
+    onBeforeUnmount(() => socket.disconnect());
+  }
+
+  async function fetchTasks() {
+    updateTasks(await http.get('').json<ITaskItem<ITaskAliyunRunner>[]>());
+  }
+
+  function updateTasks(tasks: ITaskItem<ITaskAliyunRunner>[] | undefined) {
     if (!tasks) {
       taskIds.value = undefined;
       return;
@@ -36,7 +49,7 @@ export const useTaskStore = defineStore('task', () => {
 
     taskIds.value = tasks.map((task) => task.id);
 
-    updateTaskItems((items) => {
+    mutateTaskItems((items) => {
       for (const task of tasks) {
         items[task.id] = Object.assign(items[task.id] || {}, task);
       }
@@ -53,17 +66,19 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
-  async function fetchTaskState(id: string) {
-    const state = await http.get(`tasks/${encodeURIComponent(id)}/state`).json<ITaskState>();
-    updateTaskItems((items) => {
+  function updateTaskState(id: string, state: ITaskState) {
+    mutateTaskItems((items) => {
       items[id].state = state;
     });
   }
 
+  socket.on('tasks', updateTasks);
+  socket.on('state', updateTaskState);
+
   return {
     tasks,
     runningTasks,
+    connectIO,
     fetchTasks,
-    fetchTaskState,
   };
 });

@@ -52,7 +52,6 @@ import type {
 } from '@vapourcontainers-houston/types';
 
 import useSize from '@/composables/useSize';
-import useInterval from '@/composables/useInterval';
 import useRunnerStats from '@/composables/useRunnerStats';
 
 const props = defineProps<{
@@ -131,8 +130,6 @@ function formatDuration(duration: plugin.Duration | undefined, precision = 0) {
 
   return `${hours}:${minutes}:${seconds}`;
 }
-
-useInterval(() => taskStore.fetchTaskState(props.task.id), 1000);
 </script>
 
 <style lang="scss" module>

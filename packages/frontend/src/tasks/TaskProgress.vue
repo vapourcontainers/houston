@@ -33,9 +33,6 @@
         <a-statistic title="总费用（预计）" :value="estimatedBalance" :precision="2" prefix="￥" />
       </a-col>
     </a-row>
-
-    <a-progress status="active" :percent="Math.round(percent * 100)" :size="20" :show-info="false"
-      :style="{ marginTop: '16px' }" />
   </a-skeleton>
 </template>
 
@@ -74,14 +71,6 @@ const timecode = computed(() => {
   }
 
   return dayjs.duration(progress.value.processedDurationMs);
-});
-
-const percent = computed(() => {
-  if (!format.value || !progress.value) {
-    return 0;
-  }
-
-  return progress.value.processedFrames / format.value.frames;
 });
 
 const price = computed(() => {

@@ -13,19 +13,20 @@
             <task-status-tag :status="item.runner.status" />
           </template>
 
-          <task-stage :task="item" />
-
           <template v-if="item.runner.status == ITaskRunnerStatus.RUNNING">
+            <div :class="$style.stage">
+              <task-stage :task="item" />
+            </div>
+          </template>
+
+          <template v-if="item.state?.stage == ITaskStage.ENCODE">
             <task-progress :task="item" />
+            <a-divider />
+            <task-format :task="item" />
             <a-divider />
           </template>
 
           <task-runner :task="item" />
-
-          <template v-if="item.runner.status == ITaskRunnerStatus.RUNNING">
-            <a-divider />
-            <task-format :task="item" />
-          </template>
         </a-card>
       </a-list-item>
     </template>
@@ -38,6 +39,7 @@ import { useTaskStore } from '@/stores/task';
 import {
   ITaskRunnerStatus,
   type ITaskAliyunRunner,
+  ITaskStage,
 } from '@vapourcontainers-houston/types';
 
 import TaskStatusTag from './TaskStatusTag.vue';
@@ -61,5 +63,10 @@ function linkToECI(runner: ITaskAliyunRunner) {
     padding-left: 0;
     padding-right: 0;
   }
+}
+
+.stage {
+  margin: 16px auto 32px;
+  max-width: 800px;
 }
 </style>

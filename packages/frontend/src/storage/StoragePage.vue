@@ -19,7 +19,7 @@
     </a-col>
     <a-col :span="24">
       <a-card>
-        <a-table :dataSource="storageStore.items" :columns="columns" :loading="!storageStore.items"
+        <a-table :dataSource="items" :columns="columns" :loading="!storageStore.items" expand-row-by-click
           :class="$style.items" />
       </a-card>
     </a-col>
@@ -27,7 +27,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { TableColumnType } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -71,10 +71,57 @@ const columns: TableColumnType<IStorageItem>[] = [
     dataIndex: 'modifiedAt',
     width: '20em',
     customRender({ record }) {
+      if (typeof record.modifiedAt == 'undefined') {
+        return undefined;
+      }
+
       return dayjs(record.modifiedAt).format('YYYY-MM-DD HH:mm:ss');
     },
   },
 ];
+
+interface INestedStorageItem extends Omit<IStorageItem, 'size' | 'modifiedAt'> {
+  key: string;
+  size?: number;
+  modifiedAt?: string;
+  children?: INestedStorageItem[];
+}
+
+const items = computed<INestedStorageItem[] | undefined>(() => {
+  if (!storageStore.items) {
+    return undefined;
+  }
+
+  const itemsMap: Record<string, INestedStorageItem> = {};
+  const result: INestedStorageItem[] = [];
+
+  for (const item of storageStore.items) {
+    const parts = item.name.split('/');
+
+    for (const [i, name] of parts.entries()) {
+      const key = parts.slice(0, i + 1).join('/');
+      const parentKey = parts.slice(0, i).join('/');
+      const isRoot = i == 0;
+      const isLeaf = i == parts.length - 1;
+
+      if (!itemsMap[key]) {
+        const newItem: INestedStorageItem = isLeaf
+          ? ({ ...item, key, name })
+          : ({ key, name: `${name}/`, children: [] });
+
+        if (isRoot) {
+          result.push(newItem);
+        } else {
+          itemsMap[parentKey]?.children?.push(newItem);
+        }
+
+        itemsMap[key] = newItem;
+      }
+    }
+  }
+
+  return result;
+});
 </script>
 
 <style lang="scss" module>

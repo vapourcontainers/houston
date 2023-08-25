@@ -87,7 +87,6 @@ export class TaskGateway implements
         }
       }
     } catch (e) {
-      console.error(e);
     }
   }
 

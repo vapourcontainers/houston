@@ -19,7 +19,8 @@
     </a-col>
     <a-col :span="24">
       <a-card>
-        <a-table :dataSource="storageStore.items" :columns="columns" :loading="!storageStore.items" />
+        <a-table :dataSource="storageStore.items" :columns="columns" :loading="!storageStore.items"
+          :class="$style.items" />
       </a-card>
     </a-col>
   </a-row>
@@ -75,3 +76,11 @@ const columns: TableColumnType<IStorageItem>[] = [
   },
 ];
 </script>
+
+<style lang="scss" module>
+.items {
+  :global(.ant-table-cell) {
+    font-family: monospace;
+  }
+}
+</style>

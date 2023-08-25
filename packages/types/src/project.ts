@@ -1,4 +1,5 @@
 export interface IProject {
+  image: string;
   footages: IProjectFootage[];
   targets: IProjectTarget[];
   upload: IProjectUpload;

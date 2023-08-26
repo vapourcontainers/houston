@@ -18,10 +18,8 @@
       </a-card>
     </a-col>
     <a-col :span="24">
-      <a-card>
-        <a-table :dataSource="items" :columns="columns" :loading="!storageStore.items" expand-row-by-click
-          :class="$style.items" />
-      </a-card>
+      <a-table :dataSource="items" :columns="columns" :loading="!storageStore.items" expand-row-by-click
+        :class="$style.items" />
     </a-col>
   </a-row>
 </template>

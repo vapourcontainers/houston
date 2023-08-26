@@ -1,5 +1,5 @@
 <template>
-  <a-list :grid="{ gutter: 0 }" :data-source="taskStore.tasks" :class="$style.tasks">
+  <a-list :grid="{ gutter: 0 }" :data-source="taskStore.tasks" :loading="!taskStore.tasks" :class="$style.tasks">
     <template #renderItem="{ item }">
       <a-list-item :key="item.id">
         <a-card>
